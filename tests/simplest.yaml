@@ -1,0 +1,9 @@
+states:
+    - id: "Occupied"
+      transitions:
+         - event: "PIR_HIT"
+           target: "Vacant"
+    - id: "Vacant"
+      transitions:
+         - event: "TIMEOUT"
+           target: "Occupied"
