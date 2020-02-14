@@ -3,6 +3,8 @@ states:
       transitions:
          - event: "PIR_HIT"
            target: "Vacant"
+         - event: "PIR_HIT"
+           target: "Occupied"
     - name: "Vacant"
       transitions:
          - event: "TIMEOUT"

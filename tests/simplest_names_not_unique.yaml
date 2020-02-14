@@ -7,3 +7,7 @@ states:
       transitions:
          - event: "TIMEOUT"
            target: "Occupied"
+    - name: "Occupied"
+      transitions:
+         - event: "RANDOM"
+           target: "Vacant"

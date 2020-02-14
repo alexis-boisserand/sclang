@@ -1,1 +1,2 @@
-from .loader import load
+from .models import load
+from .errors import Error, LoadingError

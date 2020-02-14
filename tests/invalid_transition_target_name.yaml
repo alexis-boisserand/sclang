@@ -6,4 +6,4 @@ states:
     - name: "Vacant"
       transitions:
          - event: "TIMEOUT"
-           target: "Occupied"
+           target: "Unknown"

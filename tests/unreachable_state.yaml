@@ -7,3 +7,5 @@ states:
       transitions:
          - event: "TIMEOUT"
            target: "Occupied"
+    - name: "Unreachable"
+      transitions: []
