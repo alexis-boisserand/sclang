@@ -15,13 +15,12 @@ def _unique_values(list_):
 
 
 def _validate_states_names(states):
-    states_names = [state.name for state in states]
-    if not _unique_values(states_names):
+    if not _unique_values([state.name for state in states]):
         raise ValidationError('states\' names must be unique')
-    return states_names
 
 
-def _validate_transitions(states, states_names):
+def _validate_transitions(states):
+    states_names = [state.name for state in states]
     for state in states:
         event_names = []
         for transition in state.transitions:
@@ -64,8 +63,8 @@ class Machine(Model):
     states = ListType(ModelType(State), required=True)
 
     def validate_states(self, data, states):
-        states_names = _validate_states_names(states)
-        _validate_transitions(states, states_names)
+        _validate_states_names(states)
+        _validate_transitions(states)
         _validate_all_states_are_reachable(states)
 
         return states
