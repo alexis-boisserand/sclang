@@ -22,18 +22,11 @@ def _validate_states_names(states):
 def _validate_transitions(states):
     states_names = [state.name for state in states]
     for state in states:
-        event_names = []
         for transition in state.transitions:
             if transition.target not in states_names:
                 raise ValidationError(
                     'invalid transition target name "{}" in state "{}"'.format(
                         transition.target, state.name))
-            event_names.append(transition.event)
-
-        if not _unique_values(event_names):
-            raise ValidationError(
-                'transition events must be unique for state "{}"'.format(
-                    state.name))
 
 
 def _validate_all_states_are_reachable(states):
@@ -57,6 +50,11 @@ class Transition(Model):
 class State(Model):
     name = StringType(required=True)
     transitions = ListType(ModelType(Transition), required=True)
+
+    def validate_transitions(self, data, transitions):
+        event_names = [transition.event for transition in transitions]
+        if not _unique_values(event_names):
+            raise ValidationError('transition events must be unique')
 
 
 class Machine(Model):
