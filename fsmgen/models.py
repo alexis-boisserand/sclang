@@ -46,7 +46,6 @@ class Machine(Model):
                     'transition events must be unique for state "{}"'.format(
                         state.name))
 
-
         # check that all non-initial states have at least one predecessor
         for dest in states[1:]:
             target_names = []
