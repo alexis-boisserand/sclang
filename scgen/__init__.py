@@ -1,2 +1,2 @@
-from .models import load
-from .errors import Error, LoadingError
+from .models import load, LoadingError
+from .errors import Error

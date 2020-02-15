@@ -2,7 +2,14 @@ import yaml
 from schematics.models import Model
 from schematics.types import StringType, ListType, ModelType
 from schematics.exceptions import ValidationError
-from .errors import LoadingError
+from .errors import Error
+
+
+class LoadingError(Error):
+    def __str__(self):
+        if self.__cause__:
+            return str(self.__cause__)
+        return super().__str__(self)
 
 
 def _unique_values(list_):
