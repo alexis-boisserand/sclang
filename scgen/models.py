@@ -12,7 +12,7 @@ class LoadingError(Error):
         return super().__str__(self)
 
 
-def _unique_values(list_):
+def unique_values(list_):
     set_ = set()
     for x in list_:
         if x in set_:
@@ -21,12 +21,12 @@ def _unique_values(list_):
     return True
 
 
-def _validate_states_names(states):
-    if not _unique_values([state.name for state in states]):
+def validate_states_names(states):
+    if not unique_values([state.name for state in states]):
         raise ValidationError('states\' names must be unique')
 
 
-def _validate_transitions(states):
+def validate_transitions(states):
     states_names = [state.name for state in states]
     for state in states:
         for transition in state.transitions:
@@ -36,7 +36,7 @@ def _validate_transitions(states):
                         transition.target, state.name))
 
 
-def _validate_all_states_are_reachable(states):
+def validate_all_states_are_reachable(states):
     for dest in states[1:]:
         target_names = []
         for src in states:
@@ -60,7 +60,7 @@ class State(Model):
 
     def validate_transitions(self, data, transitions):
         event_names = [transition.event for transition in transitions]
-        if not _unique_values(event_names):
+        if not unique_values(event_names):
             raise ValidationError('transition events must be unique')
 
 
@@ -69,10 +69,9 @@ class Machine(Model):
     states = ListType(ModelType(State), required=True)
 
     def validate_states(self, data, states):
-        _validate_states_names(states)
-        _validate_transitions(states)
-        _validate_all_states_are_reachable(states)
-
+        validate_states_names(states)
+        validate_transitions(states)
+        validate_all_states_are_reachable(states)
         return states
 
 
