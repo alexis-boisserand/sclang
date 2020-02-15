@@ -25,8 +25,8 @@ def input_file(request):
 def test_simplest(input_file):
     simplest = scgen.load(input_file)
     assert len(simplest.states) == 2
-    assert simplest.states[0].name == "Off"
-    assert simplest.states[0].transitions[0].event == "BUTTON_PRESS"
+    assert simplest.states[0].name == 'Off'
+    assert simplest.states[0].transitions[0].event == 'BUTTON_PRESS'
 
 
 def test_none():
@@ -36,10 +36,17 @@ def test_none():
 
 def test_garbage():
     with pytest.raises(scgen.LoadingError):
-        scgen.load("garbage")
+        scgen.load('garbage')
 
 
 def test_state_no_name(input_file):
+    with pytest.raises(scgen.LoadingError) as exc:
+        scgen.load(input_file)
+    cause = exc.value.__cause__
+    assert type(cause) is schematics.exceptions.DataError
+
+
+def test_empty_name(input_file):
     with pytest.raises(scgen.LoadingError) as exc:
         scgen.load(input_file)
     cause = exc.value.__cause__

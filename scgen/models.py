@@ -1,7 +1,8 @@
 import yaml
 from schematics.models import Model
-from schematics.types import StringType, ListType, ModelType
+from schematics.types import ListType, ModelType
 from schematics.exceptions import ValidationError
+from .normalize import NormalizedStringType
 from .errors import Error
 
 
@@ -50,12 +51,12 @@ def validate_all_states_are_reachable(states):
 
 
 class Transition(Model):
-    event = StringType(required=True)
-    target = StringType(required=True)
+    event = NormalizedStringType(required=True)
+    target = NormalizedStringType(required=True)
 
 
 class State(Model):
-    name = StringType(required=True)
+    name = NormalizedStringType(required=True)
     transitions = ListType(ModelType(Transition), required=True)
 
     def validate_transitions(self, data, transitions):
@@ -65,7 +66,7 @@ class State(Model):
 
 
 class Machine(Model):
-    name = StringType(required=True)
+    name = NormalizedStringType(required=True)
     states = ListType(ModelType(State), required=True)
 
     def validate_states(self, data, states):
