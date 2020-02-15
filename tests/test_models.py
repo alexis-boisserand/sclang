@@ -25,8 +25,8 @@ def input_file(request):
 def test_simplest(input_file):
     simplest = scgen.load(input_file)
     assert len(simplest.states) == 2
-    assert simplest.states[0].name == "Occupied"
-    assert simplest.states[0].transitions[0].event == "PIR_HIT"
+    assert simplest.states[0].name == "Off"
+    assert simplest.states[0].transitions[0].event == "BUTTON_PRESS"
 
 
 def test_none():

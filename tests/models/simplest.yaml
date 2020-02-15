@@ -1,9 +1,9 @@
 states:
-    - name: "Occupied"
+    - name: "Off"
       transitions:
-         - event: "PIR_HIT"
-           target: "Vacant"
-    - name: "Vacant"
+         - event: "BUTTON_PRESS"
+           target: "On"
+    - name: "On"
       transitions:
          - event: "TIMEOUT"
-           target: "Occupied"
+           target: "Off"
