@@ -21,7 +21,7 @@ def graph(machine):
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Generates a state chart representation.')
+        description='Generates the statechart representation.')
     parser.add_argument(
         '-d',
         '--dot',
@@ -35,7 +35,7 @@ def main():
                         '--machine',
                         required=True,
                         type=argparse.FileType('r'),
-                        help='FSM declaration file')
+                        help='statechart declaration file')
     args = parser.parse_args()
 
     try:

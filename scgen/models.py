@@ -65,6 +65,7 @@ class State(Model):
 
 
 class Machine(Model):
+    name = StringType(required=True)
     states = ListType(ModelType(State), required=True)
 
     def validate_states(self, data, states):
