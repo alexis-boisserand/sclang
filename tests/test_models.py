@@ -1,5 +1,5 @@
-import pytest
 import os
+import pytest
 import scgen
 import schematics
 
@@ -10,9 +10,20 @@ def local(file_name):
     return os.path.join(current_dir, file_name)
 
 
-def test_simplest():
-    with open(local('simplest.yaml'), 'r') as f:
-        simplest = scgen.load(f)
+def remove_prefix(text, prefix):
+    return text[text.startswith(prefix) and len(prefix):]
+
+
+@pytest.fixture(scope='function')
+def input_file(request):
+    basename = remove_prefix(request.function.__name__, 'test_')
+    name = os.path.join('models', '{}.yaml'.format(basename))
+    with open(local(name), 'r') as f:
+        yield f
+
+
+def test_simplest(input_file):
+    simplest = scgen.load(input_file)
     assert len(simplest.states) == 2
     assert simplest.states[0].name == "Occupied"
     assert simplest.states[0].transitions[0].event == "PIR_HIT"
@@ -28,41 +39,36 @@ def test_garbage():
         scgen.load("garbage")
 
 
-def test_state_no_name():
-    with open(local('no_name.yaml'), 'r') as f:
-        with pytest.raises(scgen.LoadingError) as exc:
-            scgen.load(f)
+def test_state_no_name(input_file):
+    with pytest.raises(scgen.LoadingError) as exc:
+        scgen.load(input_file)
     cause = exc.value.__cause__
     assert type(cause) is schematics.exceptions.DataError
 
 
-def test_state_names_not_unique():
-    with open(local('names_not_unique.yaml'), 'r') as f:
-        with pytest.raises(scgen.LoadingError) as exc:
-            scgen.load(f)
+def test_state_names_not_unique(input_file):
+    with pytest.raises(scgen.LoadingError) as exc:
+        scgen.load(input_file)
     cause = exc.value.__cause__
     assert 'unique' in str(cause)
 
 
-def test_invalid_transition_target_name():
-    with open(local('invalid_transition_target_name.yaml'), 'r') as f:
-        with pytest.raises(scgen.LoadingError) as exc:
-            scgen.load(f)
+def test_invalid_transition_target_name(input_file):
+    with pytest.raises(scgen.LoadingError) as exc:
+        scgen.load(input_file)
     cause = exc.value.__cause__
     assert 'invalid transition target name' in str(cause)
 
 
-def test_invalid_transition_event():
-    with open(local('invalid_transition_event.yaml'), 'r') as f:
-        with pytest.raises(scgen.LoadingError) as exc:
-            scgen.load(f)
+def test_invalid_transition_event(input_file):
+    with pytest.raises(scgen.LoadingError) as exc:
+        scgen.load(input_file)
     cause = exc.value.__cause__
     assert 'transition events must be unique' in str(cause)
 
 
-def test_unreachable_state():
-    with open(local('unreachable_state.yaml'), 'r') as f:
-        with pytest.raises(scgen.LoadingError) as exc:
-            scgen.load(f)
+def test_unreachable_state(input_file):
+    with pytest.raises(scgen.LoadingError) as exc:
+        scgen.load(input_file)
     cause = exc.value.__cause__
     assert 'unreachable' in str(cause)
