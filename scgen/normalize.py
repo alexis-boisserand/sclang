@@ -3,9 +3,9 @@ from enum import Enum
 from schematics.types import StringType
 from schematics.exceptions import ValidationError
 
-lower_case = re.compile(r'([a-z]+_?)*[a-z]')
-upper_case = re.compile(r'([A-Z]+_?)*[A-Z]')
-camel_case = re.compile(r'([A-Z][a-z]*)+')
+_lower_case = re.compile(r'([a-z]+_?)*[a-z]')
+_upper_case = re.compile(r'([A-Z]+_?)*[A-Z]')
+_camel_case = re.compile(r'([A-Z][a-z]*)+')
 
 
 class AutoNumber(Enum):
@@ -24,11 +24,11 @@ class NamingStyle(AutoNumber):
 
 
 def naming_style(str_):
-    if lower_case.fullmatch(str_):
+    if _lower_case.fullmatch(str_):
         return NamingStyle.LOWER_CASE
-    if upper_case.fullmatch(str_):
+    if _upper_case.fullmatch(str_):
         return NamingStyle.UPPER_CASE
-    if camel_case.fullmatch(str_):
+    if _camel_case.fullmatch(str_):
         return NamingStyle.CAMEL_CASE
     return NamingStyle.OTHER
 
@@ -66,6 +66,18 @@ def normalize(str_, style):
             [token[:1].upper() + token[1:].lower() for token in tokens])
 
     assert False, 'unknown style'
+
+
+def lower_case(str_):
+    return normalize(str_, NamingStyle.LOWER_CASE)
+
+
+def upper_case(str_):
+    return normalize(str_, NamingStyle.UPPER_CASE)
+
+
+def camel_case(str_):
+    return normalize(str_, NamingStyle.CAMEL_CASE)
 
 
 class NormalizedStringType(StringType):

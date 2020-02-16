@@ -1,0 +1,5 @@
+{% from 'common.jinja' import include_guards, enum_decl %}
+
+{% call include_guards(machine.name) %}
+{{ enum_decl(machine.name + '_event', machine.list_event_names()) }}
+{% endcall %}

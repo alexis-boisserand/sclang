@@ -75,6 +75,13 @@ class Machine(Model):
         validate_all_states_are_reachable(states)
         return states
 
+    def list_event_names(self):
+        events = set()
+        for state in self.states:
+            for transition in state.transitions:
+                events.add(transition.event)
+        return events
+
 
 def load(stream):
     try:

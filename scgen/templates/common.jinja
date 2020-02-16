@@ -1,0 +1,17 @@
+
+{% macro enum_decl(name, fields) %}
+typedef enum
+{
+{% for field in fields %}
+    {{ field | upper_case }}{% if not loop.last %},{% endif %}
+{% endfor %}
+} {{ name | lower_case }}_t;
+{% endmacro %}
+
+{% macro include_guards(name) %}
+{% set guard = name | upper_case %}
+#ifndef {{ guard }}_H
+#define {{ guard }}_H
+{{ caller() }}
+#endif // {{ guard }}_H
+{% endmacro %}
