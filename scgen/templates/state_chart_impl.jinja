@@ -65,11 +65,12 @@ static {{state_type}} current_state;
 
 #include <assert.h>
 #include <stdbool.h>
+#include <stddef.h>
 
 typedef struct
 {
-    {{ state_type }} state,
-    const char* name
+    {{ state_type }} state;
+    const char* name;
 } {{ state_desc_type }};
 
 static {{ state_desc_type }} states_descriptions[] = 
@@ -81,7 +82,7 @@ static {{ state_desc_type }} states_descriptions[] =
 
 const char* {{sm.ns}}_get_current_state(void)
 {
-    for (size_t i; i < sizeof(states_descriptions) / sizeof({{ state_desc_type}}); i++)
+    for (size_t i = 0; i < sizeof(states_descriptions) / sizeof({{ state_desc_type}}); i++)
     {
         if (states_descriptions[i].state == current_state)
         {

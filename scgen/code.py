@@ -8,7 +8,7 @@ from .normalize import upper_case, lower_case, camel_case
 current_dir = os.path.dirname(__file__)
 
 
-def code(state_chart):
+def code(state_chart, output_dir):
     template_dir = os.path.join(current_dir, 'templates')
     filters = {
         func.__name__: func
@@ -23,13 +23,18 @@ def code(state_chart):
     file_prefix = lower_case(state_chart.name)
     for input_, ext in inputs:
         template = env.get_template(input_)
-        output = '.'.join([file_prefix, ext])
-        template.stream(state_chart=state_chart, file_prefix=file_prefix).dump(output)
+        output = os.path.join(output_dir, '.'.join([file_prefix, ext]))
+        template.stream(state_chart=state_chart,
+                        file_prefix=file_prefix).dump(output)
 
 
 def main():
     parser = argparse.ArgumentParser(
         description='Generates the statechart corresponding C code.')
+    parser.add_argument('-o',
+                        '--output',
+                        default='.',
+                        help='code output directory')
     parser.add_argument('-sc',
                         '--state_chart',
                         required=True,
@@ -43,7 +48,7 @@ def main():
         print('Failed to load {}: {}'.format(args.state_chart.name, str(exc)))
         sys.exit(1)
 
-    code(state_chart)
+    code(state_chart, args.output)
 
 
 if __name__ == '__main__':
