@@ -1,5 +1,5 @@
 {% import 'c_constructs.jinja' as c %}
-{% import 'state_machine.jinja' as sm with context %}
+{% import 'state_chart.jinja' as sm with context %}
 {% extends 'base.jinja' %}
 
 {% set state_type = sm.ns + '_state_t' %}
@@ -13,21 +13,21 @@ static void {{make_event_handler_name(state)}}({{sm.event_type}} event)
 {%- endmacro %}
 
 {% block description %}
- * {{machine.name}} statechart implementation.
+ * {{state_chart.name}} statechart implementation.
 {% endblock %}
 
 {% block body %}
 #include "{{ file_prefix }}.h"
 
-{{ c.enum_decl(state_type, machine.states | map(attribute='name') | map('upper_case')) }}
+{{ c.enum_decl(state_type, state_chart.states | map(attribute='name') | map('upper_case')) }}
 
 static {{state_type}} current_state;
 
-{% for state in machine.states %}
+{% for state in state_chart.states %}
 {{ make_event_handler_sig(state) }};
 {% endfor %}
 
-{% for state in machine.states %}
+{% for state in state_chart.states %}
 {{ make_event_handler_sig(state) }}
 {
     switch (event)
@@ -44,14 +44,14 @@ static {{state_type}} current_state;
 
 {{ sm.init_sig }}
 {
-    current_state = {{ machine.states[0].name | upper_case}};
+    current_state = {{ state_chart.states[0].name | upper_case}};
 }
 
 {{ sm.handle_event_sig }}
 {
     switch (current_state)
     {
-    {% for state in machine.states %}
+    {% for state in state_chart.states %}
     case {{ state.name | upper_case }}:
         {{ make_event_handler_name(state) }}(event);
         break;
@@ -74,7 +74,7 @@ typedef struct
 
 static {{ state_desc_type }} states_descriptions[] = 
 {
-{% for state in machine.states %}
+{% for state in state_chart.states %}
     { {{ state.name | upper}}, "{{ state.name }}" }{% if not loop.last %},{% endif %}{{- '\n' -}}
 {% endfor %}
 };

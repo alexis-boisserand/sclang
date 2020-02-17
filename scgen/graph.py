@@ -4,16 +4,16 @@ from graphviz import Digraph
 from .models import load, LoadingError
 
 
-def graph(machine):
+def graph(state_chart):
     dot = Digraph()
-    if machine.states:
+    if state_chart.states:
         dot.node('entry', label='', shape='point')
-    for state in machine.states:
+    for state in state_chart.states:
         dot.node(state.name, label=state.name, shape='box', style='rounded')
 
-    if machine.states:
-        dot.edge('entry', machine.states[0].name)
-    for state in machine.states:
+    if state_chart.states:
+        dot.edge('entry', state_chart.states[0].name)
+    for state in state_chart.states:
         for transition in state.transitions:
             dot.edge(state.name, transition.target, label=transition.event)
     return dot
@@ -31,20 +31,20 @@ def main():
         help=
         'Generates the graphviz dot file input. If no option is given, the file\'s content will be printed on the standard output.'
     )
-    parser.add_argument('-m',
-                        '--machine',
+    parser.add_argument('-sc',
+                        '--state_chart',
                         required=True,
                         type=argparse.FileType('r'),
                         help='statechart declaration file')
     args = parser.parse_args()
 
     try:
-        machine = load(args.machine)
+        state_chart = load(args.state_chart)
     except LoadingError as exc:
-        print('Failed to load {}: {}'.format(args.machine.name, str(exc)))
+        print('Failed to load {}: {}'.format(args.state_chart.name, str(exc)))
         sys.exit(1)
 
-    dot = graph(machine)
+    dot = graph(state_chart)
     if args.dot:
         args.dot.write(dot.source)
     dot.view()

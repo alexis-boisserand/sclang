@@ -1,4 +1,4 @@
-{% set ns = machine.name | lower_case %}
+{% set ns = state_chart.name | lower_case %}
 {% set event_type = ns + '_event_t' %}
 {% set init_sig = 'void ' + ns + '_init(void)' %}
 {% set handle_event_sig = 'void ' + ns + '_handle_event(' + event_type + ' event)' %}

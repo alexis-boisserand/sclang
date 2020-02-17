@@ -65,7 +65,7 @@ class State(Model):
             raise ValidationError('transition events must be unique')
 
 
-class Machine(Model):
+class StateChart(Model):
     name = NormalizedStringType(required=True)
     states = ListType(ModelType(State), required=True)
 
@@ -86,8 +86,8 @@ class Machine(Model):
 def load(stream):
     try:
         dict_ = yaml.safe_load(stream)
-        machine = Machine(dict_)
-        machine.validate()
+        state_chart = StateChart(dict_)
+        state_chart.validate()
     except Exception as exc:
         raise LoadingError from exc
-    return machine
+    return state_chart

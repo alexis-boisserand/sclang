@@ -8,7 +8,7 @@ from .normalize import upper_case, lower_case, camel_case
 current_dir = os.path.dirname(__file__)
 
 
-def code(machine):
+def code(state_chart):
     template_dir = os.path.join(current_dir, 'templates')
     filters = {
         func.__name__: func
@@ -18,32 +18,32 @@ def code(machine):
                       trim_blocks=True,
                       lstrip_blocks=True)
     env.filters.update(filters)
-    inputs = [('state_machine_header.jinja', 'h'),
-              ('state_machine_impl.jinja', 'c')]
-    file_prefix = lower_case(machine.name)
+    inputs = [('state_chart_header.jinja', 'h'),
+              ('state_chart_impl.jinja', 'c')]
+    file_prefix = lower_case(state_chart.name)
     for input_, ext in inputs:
         template = env.get_template(input_)
         output = '.'.join([file_prefix, ext])
-        template.stream(machine=machine, file_prefix=file_prefix).dump(output)
+        template.stream(state_chart=state_chart, file_prefix=file_prefix).dump(output)
 
 
 def main():
     parser = argparse.ArgumentParser(
         description='Generates the statechart corresponding C code.')
-    parser.add_argument('-m',
-                        '--machine',
+    parser.add_argument('-sc',
+                        '--state_chart',
                         required=True,
                         type=argparse.FileType('r'),
                         help='statechart declaration file')
     args = parser.parse_args()
 
     try:
-        machine = load(args.machine)
+        state_chart = load(args.state_chart)
     except LoadingError as exc:
-        print('Failed to load {}: {}'.format(args.machine.name, str(exc)))
+        print('Failed to load {}: {}'.format(args.state_chart.name, str(exc)))
         sys.exit(1)
 
-    code(machine)
+    code(state_chart)
 
 
 if __name__ == '__main__':
