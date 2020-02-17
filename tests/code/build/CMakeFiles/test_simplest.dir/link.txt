@@ -1,0 +1,1 @@
+/usr/bin/cc    CMakeFiles/test_simplest.dir/test_simplest.c.o CMakeFiles/test_simplest.dir/simplest.c.o  -o test_simplest 

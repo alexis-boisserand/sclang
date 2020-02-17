@@ -1,4 +1,3 @@
-{% import 'c_constructs.jinja' as c %}
 {% import 'state_chart.jinja' as sm with context %}
 {% extends 'header_base.jinja' %}
 
@@ -8,7 +7,12 @@
 
 {% block decl %}
 
-{{ c.enum_decl(sm.event_type, state_chart.list_event_names() | map('upper_case')) }}
+typedef enum
+{
+{% for event in state_chart.list_event_names() %}
+    {{ sm.make_event_name(event) }}{% if not loop.last %},{% endif %}{{- '\n' -}}
+{%- endfor %}
+} {{ sm.event_type }};
 
 {{ sm.init_sig }};
 {{ sm.handle_event_sig }};

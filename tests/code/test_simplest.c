@@ -15,13 +15,13 @@ int main(int argc, char** argv)
 {
     simplest_init();
     check_state("Off");
-    simplest_handle_event(TIMEOUT);
+    simplest_handle_event(SIMPLEST_TIMEOUT);
     check_state("Off");
-    simplest_handle_event(BUTTON_PRESS);
+    simplest_handle_event(SIMPLEST_BUTTON_PRESS);
     check_state("On");
-    simplest_handle_event(BUTTON_PRESS);
+    simplest_handle_event(SIMPLEST_BUTTON_PRESS);
     check_state("On");
-    simplest_handle_event(TIMEOUT);
+    simplest_handle_event(SIMPLEST_TIMEOUT);
     check_state("Off");
     return 0;
 }

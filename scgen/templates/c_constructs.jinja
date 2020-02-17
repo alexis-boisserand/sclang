@@ -1,7 +1,0 @@
-
-{% macro enum_decl(name, fields) %}
-typedef enum
-{
-    {{ fields | join(',\n    ')}}
-} {{ name }};
-{%- endmacro %}

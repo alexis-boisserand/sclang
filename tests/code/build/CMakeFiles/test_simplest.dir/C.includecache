@@ -1,0 +1,32 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/alexis/Projects/scgen/tests/code/build/simplest.c
+simplest.h
+/home/alexis/Projects/scgen/tests/code/build/simplest.h
+assert.h
+-
+stdbool.h
+-
+stddef.h
+-
+
+/home/alexis/Projects/scgen/tests/code/build/simplest.h
+
+/home/alexis/Projects/scgen/tests/code/test_simplest.c
+simplest.h
+/home/alexis/Projects/scgen/tests/code/simplest.h
+string.h
+-
+assert.h
+-
+stdio.h
+-
+
+simplest.h
+
