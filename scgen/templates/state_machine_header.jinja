@@ -1,5 +1,16 @@
-{% from 'common.jinja' import include_guards, enum_decl %}
+{% import 'c_constructs.jinja' as c %}
+{% import 'state_machine.jinja' as sm with context %}
+{% extends 'header_base.jinja' %}
 
-{% call include_guards(machine.name) %}
-{{ enum_decl(machine.name + '_event', machine.list_event_names()) }}
-{% endcall %}
+{% block description %}
+ * Declarations for the {{machine.name}} statechart.
+{% endblock %}
+
+{% block decl %}
+
+{{ c.enum_decl(sm.event_type, machine.list_event_names() | map('upper_case')) }}
+
+{{ sm.init_sig }};
+{{ sm.handle_event_sig }};
+
+{% endblock %}

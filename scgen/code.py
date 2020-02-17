@@ -15,6 +15,7 @@ def code(machine):
         for func in [upper_case, lower_case, camel_case]
     }
     env = Environment(loader=FileSystemLoader(template_dir),
+                      trim_blocks=True,
                       lstrip_blocks=True)
     env.filters.update(filters)
     inputs = [('state_machine_header.jinja', 'h'),
@@ -23,7 +24,7 @@ def code(machine):
     for input_, ext in inputs:
         template = env.get_template(input_)
         output = '.'.join([file_prefix, ext])
-        template.stream(machine=machine).dump(output)
+        template.stream(machine=machine, file_prefix=file_prefix).dump(output)
 
 
 def main():
