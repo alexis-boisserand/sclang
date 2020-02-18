@@ -9,3 +9,5 @@ states:
   - event: TIMEOUT
     target: "Off"
     guard: i < 3
+  - event: TIMEOUT
+    target: "On"

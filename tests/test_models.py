@@ -91,3 +91,8 @@ def test_eventless_transitions_not_unique(input_file):
         scgen.load(input_file)
     cause = exc.value.__cause__
     assert 'transition events must be unique' in str(cause)
+
+
+def test_guard(input_file):
+    sc = scgen.load(input_file)
+    assert sc.states[1].transitions[0].guard == "i < 3"

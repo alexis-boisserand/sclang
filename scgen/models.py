@@ -1,6 +1,6 @@
 import yaml
 from schematics.models import Model
-from schematics.types import ListType, ModelType
+from schematics.types import StringType, ListType, ModelType
 from schematics.exceptions import ValidationError
 from .normalize import NormalizedStringType
 from .errors import Error
@@ -50,9 +50,16 @@ def validate_all_states_are_reachable(states):
                 dest.name))
 
 
+def hash_transition(transition):
+    to_str = lambda s: '' if s is None else s
+    return ''.join([to_str(transition.event),
+                    to_str(transition.guard)]).__hash__()
+
+
 class Transition(Model):
     event = NormalizedStringType()
     target = NormalizedStringType(required=True)
+    guard = StringType(min_length=1)
 
 
 class State(Model):
@@ -60,8 +67,7 @@ class State(Model):
     transitions = ListType(ModelType(Transition), required=True)
 
     def validate_transitions(self, data, transitions):
-        event_names = [transition.event for transition in transitions]
-        if not unique_values(event_names):
+        if not unique_values(map(hash_transition, transitions)):
             raise ValidationError('transition events must be unique')
 
 
@@ -75,7 +81,7 @@ class StateChart(Model):
         validate_all_states_are_reachable(states)
         return states
 
-    def list_event_names(self):
+    def get_event_names(self):
         events = set()
         for state in self.states:
             for transition in state.transitions:
