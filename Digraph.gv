@@ -1,8 +1,0 @@
-digraph {
-	entry [label="" shape=point]
-	Off [label=Off shape=box style=rounded]
-	On [label=On shape=box style=rounded]
-	entry -> Off
-	Off -> On [label=BUTTON_PRESS]
-	On -> Off [label=TIMEOUT]
-}
