@@ -23,10 +23,10 @@ def input_file(request):
 
 
 def test_simplest(input_file):
-    simplest = scgen.load(input_file)
-    assert len(simplest.states) == 2
-    assert simplest.states[0].name == 'Off'
-    assert simplest.states[0].transitions[0].event == 'BUTTON_PRESS'
+    sc = scgen.load(input_file)
+    assert len(sc.states) == 2
+    assert sc.states[0].name == 'Off'
+    assert sc.states[0].transitions[0].event == 'BUTTON_PRESS'
 
 
 def test_none():
@@ -67,7 +67,7 @@ def test_invalid_transition_target_name(input_file):
     assert 'invalid transition target name' in str(cause)
 
 
-def test_invalid_transition_event(input_file):
+def test_transition_events_not_unique(input_file):
     with pytest.raises(scgen.LoadingError) as exc:
         scgen.load(input_file)
     cause = exc.value.__cause__
@@ -79,3 +79,15 @@ def test_unreachable_state(input_file):
         scgen.load(input_file)
     cause = exc.value.__cause__
     assert 'unreachable' in str(cause)
+
+
+def test_eventless_transition(input_file):
+    sc = scgen.load(input_file)
+    assert sc.states[1].transitions[0].event is None
+
+
+def test_eventless_transitions_not_unique(input_file):
+    with pytest.raises(scgen.LoadingError) as exc:
+        scgen.load(input_file)
+    cause = exc.value.__cause__
+    assert 'transition events must be unique' in str(cause)

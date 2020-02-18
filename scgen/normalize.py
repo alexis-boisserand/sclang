@@ -114,5 +114,6 @@ class NormalizedStringType(StringType):
         super().validate(value, context)
         if naming_style(value) is NamingStyle.OTHER:
             raise ValidationError(
-                'naming style must be CamelCase, UPPER_CASE or lower_case')
+                'naming style must be CamelCase, lowerCamelCase, UPPER_CASE or lower_case'
+            )
         return value

@@ -4,5 +4,5 @@
 {% set handle_event_sig = 'void ' + ns + '_handle_event(' + event_type + ' event)' %}
 
 {% macro make_event_name(event) %}
-{{ ns | upper_case }}_{{ event | upper_case }}
+{{ ns | upper_case }}_{{ event if event else 'NO_EVENT' | upper_case }}
 {%- endmacro %}

@@ -51,7 +51,7 @@ def validate_all_states_are_reachable(states):
 
 
 class Transition(Model):
-    event = NormalizedStringType(required=True)
+    event = NormalizedStringType()
     target = NormalizedStringType(required=True)
 
 
