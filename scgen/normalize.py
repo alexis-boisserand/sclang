@@ -1,11 +1,13 @@
 import re
 from enum import Enum
+from itertools import takewhile
 from schematics.types import StringType
 from schematics.exceptions import ValidationError
 
 _lower_case = re.compile(r'([a-z]+_?)*[a-z]')
 _upper_case = re.compile(r'([A-Z]+_?)*[A-Z]')
-_camel_case = re.compile(r'([A-Z][a-z]*)+')
+_camel_case = re.compile(r'[A-Z][a-zA-Z]*')
+_lower_camel_case = re.compile(r'[a-z][a-zA-Z]*')
 
 
 class AutoNumber(Enum):
@@ -17,9 +19,10 @@ class AutoNumber(Enum):
 
 
 class NamingStyle(AutoNumber):
-    CAMEL_CASE = ()
-    UPPER_CASE = ()
     LOWER_CASE = ()
+    UPPER_CASE = ()
+    CAMEL_CASE = ()
+    LOWER_CAMEL_CASE = ()
     OTHER = ()
 
 
@@ -30,7 +33,28 @@ def naming_style(str_):
         return NamingStyle.UPPER_CASE
     if _camel_case.fullmatch(str_):
         return NamingStyle.CAMEL_CASE
+    if _lower_camel_case.fullmatch(str_):
+        return NamingStyle.LOWER_CAMEL_CASE
     return NamingStyle.OTHER
+
+
+def tokenize_camel_case(str_):
+    tokens = []
+    token = ''
+    for c in str_:
+        if c.isupper():
+            if token != '':
+                tokens.append(token)
+            token = c
+        else:
+            token += c
+    if token != '':
+        tokens.append(token)
+    return tokens
+
+
+def to_camel_case(tokens):
+    return ''.join([token[:1].upper() + token[1:].lower() for token in tokens])
 
 
 def normalize(str_, style):
@@ -41,17 +65,16 @@ def normalize(str_, style):
     if input_style in [NamingStyle.LOWER_CASE, NamingStyle.UPPER_CASE]:
         tokens = str_.split('_')
     elif input_style is NamingStyle.CAMEL_CASE:
-        tokens = []
-        token = ''
+        tokens = tokenize_camel_case(str_)
+    elif input_style is NamingStyle.LOWER_CAMEL_CASE:
+        first_token = ''
         for c in str_:
-            if c.isupper():
-                if token != '':
-                    tokens.append(token)
-                token = c
+            if c.islower():
+                first_token += c
             else:
-                token += c
-        if token != '':
-            tokens.append(token)
+                break
+        other_tokens = tokenize_camel_case(str_[len(first_token):])
+        tokens = [first_token] + other_tokens
     else:
         assert False, 'unknown input style'
 
@@ -62,8 +85,11 @@ def normalize(str_, style):
         return '_'.join([token.upper() for token in tokens])
 
     if style == NamingStyle.CAMEL_CASE:
-        return ''.join(
-            [token[:1].upper() + token[1:].lower() for token in tokens])
+        return to_camel_case(tokens)
+
+    if style == NamingStyle.LOWER_CAMEL_CASE:
+        print(tokens[0].lower())
+        return tokens[0].lower() + to_camel_case(tokens[1:])
 
     assert False, 'unknown style'
 
@@ -78,6 +104,10 @@ def upper_case(str_):
 
 def camel_case(str_):
     return normalize(str_, NamingStyle.CAMEL_CASE)
+
+
+def lower_camel_case(str_):
+    return normalize(str_, NamingStyle.LOWER_CAMEL_CASE)
 
 
 class NormalizedStringType(StringType):

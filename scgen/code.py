@@ -3,7 +3,7 @@ import sys
 import argparse
 from jinja2 import Environment, FileSystemLoader
 from .models import load, LoadingError
-from .normalize import upper_case, lower_case, camel_case
+from .normalize import upper_case, lower_case, camel_case, lower_camel_case
 
 current_dir = os.path.dirname(__file__)
 
@@ -12,7 +12,7 @@ def code(state_chart, output_dir):
     template_dir = os.path.join(current_dir, 'templates')
     filters = {
         func.__name__: func
-        for func in [upper_case, lower_case, camel_case]
+        for func in [upper_case, lower_case, camel_case, lower_camel_case]
     }
     env = Environment(loader=FileSystemLoader(template_dir),
                       trim_blocks=True,
