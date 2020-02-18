@@ -88,7 +88,6 @@ def normalize(str_, style):
         return to_camel_case(tokens)
 
     if style == NamingStyle.LOWER_CAMEL_CASE:
-        print(tokens[0].lower())
         return tokens[0].lower() + to_camel_case(tokens[1:])
 
     assert False, 'unknown style'
