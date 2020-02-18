@@ -1,3 +1,0 @@
-/home/alexis/Projects/scgen/tests/code/build/CMakeFiles/rebuild_cache.dir
-/home/alexis/Projects/scgen/tests/code/build/CMakeFiles/test_simplest.dir
-/home/alexis/Projects/scgen/tests/code/build/CMakeFiles/edit_cache.dir
