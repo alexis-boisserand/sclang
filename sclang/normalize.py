@@ -1,8 +1,6 @@
 import re
 from enum import Enum
 from itertools import takewhile
-from schematics.types import StringType
-from schematics.exceptions import ValidationError
 
 _lower_case = re.compile(r'([a-z]+_?)*[a-z]')
 _upper_case = re.compile(r'([A-Z]+_?)*[A-Z]')
@@ -107,13 +105,3 @@ def camel_case(str_):
 
 def lower_camel_case(str_):
     return normalize(str_, NamingStyle.LOWER_CAMEL_CASE)
-
-
-class NormalizedStringType(StringType):
-    def validate(self, value, context=None):
-        super().validate(value, context)
-        if naming_style(value) is NamingStyle.OTHER:
-            raise ValidationError(
-                'naming style must be CamelCase, lowerCamelCase, UPPER_CASE or lower_case'
-            )
-        return value
