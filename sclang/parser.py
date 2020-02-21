@@ -2,6 +2,7 @@ from lark import Lark, Transformer, v_args
 from lark.indenter import Indenter
 from .models import Transition, State, StateChart
 
+
 sc_grammar = r'''
     start: (_NL* state)+
     state: state_name _NL [_INDENT transition* _DEDENT]
@@ -39,9 +40,14 @@ class ScTransformer(Transformer):
     def state(self, state_name, *transitions):
         return State(state_name, transitions)
 
-    @v_args(inline=True)
-    def transition(self, event, state_path):
-        return Transition(event, state_path)
+    def transition(self, args):
+        if len(args) == 1:
+            return Transition(args[0])
+
+        if len(args) == 2:
+            return Transition(args[1], args[0])
+
+        assert False
 
     @v_args(inline=True)
     def to_str(self, name):
