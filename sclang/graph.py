@@ -1,7 +1,7 @@
 import sys
 import argparse
 from graphviz import Digraph
-from .models import load, LoadingError
+from .parser import parse, ParsingError
 
 
 def graph(state_chart):
@@ -39,8 +39,8 @@ def main():
     args = parser.parse_args()
 
     try:
-        state_chart = load(args.state_chart)
-    except LoadingError as exc:
+        state_chart = parse(args.state_chart)
+    except ParsingError as exc:
         print('Failed to load {}: {}'.format(args.state_chart.name, str(exc)))
         sys.exit(1)
 

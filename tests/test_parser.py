@@ -1,4 +1,5 @@
-from sclang.parser import parse
+from sclang import parse, ParsingError
+import pytest
 
 
 def test_simplest():
@@ -18,7 +19,9 @@ on
 
 
 def test_garbage_input():
-    pass
+    input = '%khcvbk'
+    with pytest.raises(ParsingError):
+        parse(input)
 
 
 def test_wrong_indentation():

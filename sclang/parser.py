@@ -1,6 +1,8 @@
 from lark import Lark, Transformer, v_args
 from lark.indenter import Indenter
+from lark.exceptions import LarkError
 from .state_chart import Transition, State, StateChart
+from .error import Error
 
 sc_grammar = r'''
     start: (_NL* state)+
@@ -19,6 +21,14 @@ sc_grammar = r'''
 
     _NL: /(\r?\n[\t ]*)+/
 '''
+
+
+class ParsingError(Error):
+    def __str__(self):
+        if self.__cause__ is None:
+            return super().__str__()
+
+        return self.__cause__.__str__()
 
 
 class ScIndenter(Indenter):
@@ -58,6 +68,9 @@ class ScTransformer(Transformer):
 
 
 def parse(input_):
-    parser = Lark(sc_grammar, parser='lalr', postlex=ScIndenter())
-    tree = parser.parse(input_)
-    return ScTransformer().transform(tree)
+    try:
+        parser = Lark(sc_grammar, parser='lalr', postlex=ScIndenter())
+        tree = parser.parse(input_)
+        return ScTransformer().transform(tree)
+    except LarkError as exc:
+        raise ParsingError from exc
