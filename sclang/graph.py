@@ -39,7 +39,8 @@ def main():
     args = parser.parse_args()
 
     try:
-        state_chart = parse(args.state_chart)
+        with args.state_chart:
+            state_chart = parse(args.state_chart.read())
     except ParsingError as exc:
         print('Failed to load {}: {}'.format(args.state_chart.name, str(exc)))
         sys.exit(1)

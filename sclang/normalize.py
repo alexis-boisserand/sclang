@@ -2,10 +2,10 @@ import re
 from enum import Enum
 from itertools import takewhile
 
-_lower_case = re.compile(r'([a-z]+_?)*[a-z]')
-_upper_case = re.compile(r'([A-Z]+_?)*[A-Z]')
-_camel_case = re.compile(r'[A-Z][a-zA-Z]*')
-_lower_camel_case = re.compile(r'[a-z][a-zA-Z]*')
+lower_case_reg = re.compile(r'([a-z]+_?)*[a-z]')
+upper_case_reg = re.compile(r'([A-Z]+_?)*[A-Z]')
+camel_case_reg = re.compile(r'[A-Z][a-zA-Z]*')
+lower_camel_case_reg = re.compile(r'[a-z][a-zA-Z]*')
 
 
 class AutoNumber(Enum):
@@ -25,13 +25,13 @@ class NamingStyle(AutoNumber):
 
 
 def naming_style(str_):
-    if _lower_case.fullmatch(str_):
+    if lower_case_reg.fullmatch(str_):
         return NamingStyle.LOWER_CASE
-    if _upper_case.fullmatch(str_):
+    if upper_case_reg.fullmatch(str_):
         return NamingStyle.UPPER_CASE
-    if _camel_case.fullmatch(str_):
+    if camel_case_reg.fullmatch(str_):
         return NamingStyle.CAMEL_CASE
-    if _lower_camel_case.fullmatch(str_):
+    if lower_camel_case_reg.fullmatch(str_):
         return NamingStyle.LOWER_CAMEL_CASE
     return NamingStyle.OTHER
 

@@ -14,12 +14,17 @@ sc_grammar = r'''
     state_path: NAME
     state_name: NAME
 
-    %import common.CNAME -> NAME
     %import common.WS_INLINE
     %declare _INDENT _DEDENT
     %ignore WS_INLINE
 
     _NL: /(\r?\n[\t ]*)+/
+
+    NAME: LOWER_CASE | UPPER_CASE | CAMEL_CASE | LOWER_CAMEL_CASE
+    LOWER_CASE: /([a-z]+_?)*[a-z]/
+    UPPER_CASE: /([A-Z]+_?)*[A-Z]/
+    CAMEL_CASE: /[A-Z][a-zA-Z]*/
+    LOWER_CAMEL_CASE: /[a-z][a-zA-Z]*/
 '''
 
 
