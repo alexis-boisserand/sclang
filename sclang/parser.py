@@ -1,7 +1,6 @@
 from lark import Lark, Transformer, v_args
 from lark.indenter import Indenter
-from .models import Transition, State, StateChart
-
+from .state_chart import Transition, State, StateChart
 
 sc_grammar = r'''
     start: (_NL* state)+
