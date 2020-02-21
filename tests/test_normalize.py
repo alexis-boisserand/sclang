@@ -1,5 +1,5 @@
 import pytest
-from scgen.normalize import NamingStyle, naming_style, normalize
+from sclang.normalize import NamingStyle, naming_style, normalize
 
 naming_style_cases = [('Camel', NamingStyle.CAMEL_CASE),
                       ('CamelCase', NamingStyle.CAMEL_CASE),

@@ -1,3 +1,3 @@
-![Python application](https://github.com/alexis-boisserand/scgen/workflows/Python%20application/badge.svg)
+![Python application](https://github.com/alexis-boisserand/sclang/workflows/Python%20application/badge.svg)
 # sclang
 Statechart definition language.

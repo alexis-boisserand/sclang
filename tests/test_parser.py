@@ -1,4 +1,4 @@
-from scgen.parser import parse
+from sclang.parser import parse
 
 
 def test_simplest():
