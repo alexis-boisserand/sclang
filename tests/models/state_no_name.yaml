@@ -1,9 +1,0 @@
-name: "simplest"
-states:
-- name: "Off"
-  transitions:
-  - event: "BUTTON_PRESS"
-    target: "On"
-- transitions:
-  - event: "TIMEOUT"
-    target: "Off"
