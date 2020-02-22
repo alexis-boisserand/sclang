@@ -1,20 +1,31 @@
+import itertools
 from lark import Lark, Transformer, v_args
 from lark.indenter import Indenter
 from lark.exceptions import LarkError
-from .state_chart import Transition, State, StateChart
+from .state_chart import Transition, EventHandler, State, StateChart
 from .error import Error
 
 sc_grammar = r'''
     start: (_NL* state)+
-    state: state_name _NL [_INDENT transition* _DEDENT]
+    state: state_name _NL [_INDENT attribute* _DEDENT]
 
-    transition: event? "->" state_path _NL
+    attribute: event_handler | init | exit
+    init: "@init" "/" action _NL
+    exit: "@exit" "/" action _NL
+    event_handler: (event)? regular_transition [_INDENT (regular_transition)* else_transition? _DEDENT]
+
+    regular_transition: ("[" guard "]")? target
+    else_transition: "[" "else" "]" target
+    target: "->" state_path ("/" action)? _NL
 
     event: NAME
     state_path: NAME
     state_name: NAME
+    guard: STRING
+    action: STRING
 
     %import common.WS_INLINE
+    %import common.ESCAPED_STRING -> STRING
     %declare _INDENT _DEDENT
     %ignore WS_INLINE
 
@@ -51,25 +62,69 @@ class ScTransformer(Transformer):
         return StateChart(states)
 
     @v_args(inline=True)
-    def state(self, state_name, *transitions):
-        return State(state_name, transitions)
+    def state(self, state_name, *attribute):
+        event_handlers = []
+        attributes = list(itertools.chain.from_iterable(attribute))
+        for attr in attributes:
+            if isinstance(attr, EventHandler):
+                event_handlers.append(attr)
+        return State(state_name, event_handlers)
 
-    def transition(self, args):
-        if len(args) == 1:
-            return Transition(args[0])
+    def attribute(self, children):
+        return children
 
-        if len(args) == 2:
-            return Transition(args[1], args[0])
+    def init(self, children):
+        return None
+
+    def exit(self, children):
+        return None
+
+    def event_handler(self, children):
+        assert len(children) >= 1
+        if isinstance(children[0], str):
+            event = children[0]
+            start_index = 1
+        else:
+            event = None
+            start_index = 0
+
+        return EventHandler(event=event, transitions=children[start_index:])
+
+    def regular_transition(self, children):
+        if len(children) == 1:
+            return Transition(**children[0])
+        if len(children) == 2:
+            children[1]['guard'] = children[0]
+            return Transition(**children[1])
+        assert False
+
+    @v_args(inline=True)
+    def else_transition(self, target):
+        target['guard'] = Transition.else_guard
+        return Transition(**target)
+
+    def target(self, children):
+        if len(children) == 1:
+            return dict(target=children[0])
+
+        if len(children) == 2:
+            return dict(target=children[0], action=children[1])
 
         assert False
 
     @v_args(inline=True)
-    def to_str(self, name):
+    def string_(self, name):
         return str(name)
 
-    event = to_str
-    state_path = to_str
-    state_name = to_str
+    @v_args(inline=True)
+    def escaped_string(self, name):
+        return str(name).strip('"')
+
+    event = string_
+    state_path = string_
+    state_name = string_
+    guard = escaped_string
+    action = escaped_string
 
 
 def parse(input_):

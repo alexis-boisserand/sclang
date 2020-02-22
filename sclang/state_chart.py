@@ -53,23 +53,43 @@ class StateChart(object):
     def get_event_names(self):
         events = set()
         for state in self.states:
-            for transition in state.transitions:
-                events.add(transition.event)
+            for event_handler in state.event_handlers:
+                events.add(event_handler.event)
         return events
 
 
 class State(object):
-    def __init__(self, name, transitions):
-        if not unique([transition.event for transition in transitions]):
+    def __init__(self, name, event_handlers=[]):
+        if not unique(
+            [event_handler.event for event_handler in event_handlers]):
             raise DefinitionError(
-                'conflicts between at least two transitions in state "{}"'.
-                format(name))
+                'events not unique in state "{}"'.format(name))
 
         self.name = name
+        self.event_handlers = event_handlers
+
+    def get_transitions(self):
+        transitions = []
+        for event_handler in self.event_handlers:
+            transitions.extend(event_handler.transitions)
+        return transitions
+
+    transitions = property(get_transitions)
+
+
+class EventHandler(object):
+    def __init__(self, event, transitions):
+        self.event = event
         self.transitions = transitions
 
 
 class Transition(object):
-    def __init__(self, target, event=None):
+    else_guard = object()
+
+    def __init__(self, target, guard=None, action=None):
         self.target = target
-        self.event = event
+        self.guard = guard
+        self.action = action
+
+    def has_else_guard(self):
+        return self.guard is Transition.else_guard

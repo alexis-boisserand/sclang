@@ -15,7 +15,7 @@ on
     sc = parse(input)
     assert len(sc.states) == 2
     assert sc.states[0].name == 'off'
-    assert sc.states[1].transitions[0].event == 'TIMEOUT'
+    assert sc.states[1].event_handlers[0].event == 'TIMEOUT'
 
 
 def test_garbage_input():
@@ -63,7 +63,7 @@ on
         parse(input)
 
 
-def test_not_unique_test_names():
+def test_state_names_not_unique():
     input = '''
 off
   BUTTON_PRESS -> on
@@ -105,7 +105,7 @@ on
         parse(input)
 
 
-def test_invalid_transition():
+def test_transition_not_unique():
     input = '''
 off
   BUTTON_PRESS -> on
@@ -117,3 +117,34 @@ on
 '''
     with pytest.raises(ParsingError):
         parse(input)
+
+
+def test_guard():
+    input = '''
+off
+  BUTTON_PRESS -> on
+  TIMEOUT["count == 3"] -> off
+
+on
+  TIMEOUT -> off
+'''
+    sc = parse(input)
+    assert sc.states[0].event_handlers[1].transitions[0].guard == 'count == 3'
+
+
+def test_multiple_guards():
+    input = '''
+off
+  BUTTON_PRESS -> on
+  TIMEOUT ["count == 3"] -> off
+          ["count == 4"] -> on
+          [else] -> on
+
+on
+  TIMEOUT -> off
+'''
+    sc = parse(input)
+    assert sc.states[0].event_handlers[1].transitions[0].guard == 'count == 3'
+    assert sc.states[0].event_handlers[1].transitions[1].guard == 'count == 4'
+    assert not sc.states[0].event_handlers[1].transitions[1].has_else_guard()
+    assert sc.states[0].event_handlers[1].transitions[2].has_else_guard()
