@@ -6,10 +6,10 @@ from .parser import parse, ParsingError
 from .normalize import upper_case, lower_case, camel_case, lower_camel_case
 
 current_dir = os.path.dirname(__file__)
+template_dir = os.path.join(current_dir, 'templates')
 
 
 def code(name, state_chart, output_dir):
-    template_dir = os.path.join(current_dir, 'templates')
     filters = {
         func.__name__: func
         for func in [upper_case, lower_case, camel_case, lower_camel_case]

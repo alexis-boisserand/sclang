@@ -1,7 +1,11 @@
+import os
 import sys
 import argparse
-from graphviz import Digraph
+from jinja2 import Environment, FileSystemLoader
 from .parser import parse, ParsingError
+
+current_dir = os.path.dirname(__file__)
+template_dir = os.path.join(current_dir, 'templates')
 
 
 def make_event_label(event_handler, transition):
@@ -20,34 +24,16 @@ def make_event_label(event_handler, transition):
 
 
 def graph(state_chart):
-    dot = Digraph()
-    if state_chart.states:
-        dot.node('entry', label='', shape='point') 
-    for state in state_chart.states:
-        dot.node(state.name, label=state.name, shape='box', style='rounded')
-
-    if state_chart.states:
-        dot.edge('entry', state_chart.states[0].name)
-    for state in state_chart.states:
-        for event_handler in state.event_handlers:
-            for transition in event_handler.transitions:
-                label = make_event_label(event_handler, transition)
-                dot.edge(state.name, transition.target, label=label)
-    return dot
+    env = Environment(loader=FileSystemLoader(template_dir),
+                      trim_blocks=True,
+                      lstrip_blocks=True)
+    template = env.get_template('graph.jinja')
+    template.stream(state_chart=state_chart).dump(sys.stdout)
 
 
 def main():
     parser = argparse.ArgumentParser(
         description='Generates the statechart representation.')
-    parser.add_argument(
-        '-d',
-        '--dot',
-        nargs='?',
-        type=argparse.FileType('w'),
-        const=sys.stdout,
-        help=
-        'Generates the graphviz dot file input. If no option is given, the file\'s content will be printed on the standard output.'
-    )
     parser.add_argument('-sc',
                         '--state_chart',
                         required=True,
@@ -62,10 +48,7 @@ def main():
         print('Failed to load {}: {}'.format(args.state_chart.name, str(exc)))
         sys.exit(1)
 
-    dot = graph(state_chart)
-    if args.dot:
-        args.dot.write(dot.source)
-    dot.view()
+    graph(state_chart)
 
 
 if __name__ == '__main__':
