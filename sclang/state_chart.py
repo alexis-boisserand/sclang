@@ -14,6 +14,13 @@ def unique(list_):
     return True
 
 
+def validate_guards(event, transitions):
+    guards = [transition.guard for transition in transitions]
+    if not unique(guards):
+        raise DefinitionError(
+            'guards are not unique for event "{}"'.format(event))
+
+
 def validate_states_names(states):
     if not unique([state.name for state in states]):
         raise DefinitionError('state names must be unique')
@@ -42,6 +49,11 @@ def validate_states_are_reachable(states):
                 dest.name))
 
 
+def validate_event_names(name, event_handlers):
+    if not unique([event_handler.event for event_handler in event_handlers]):
+        raise DefinitionError('events not unique in state "{}"'.format(name))
+
+
 class StateChart(object):
     def __init__(self, states):
         validate_states_names(states)
@@ -60,25 +72,21 @@ class StateChart(object):
 
 class State(object):
     def __init__(self, name, event_handlers=[]):
-        if not unique(
-            [event_handler.event for event_handler in event_handlers]):
-            raise DefinitionError(
-                'events not unique in state "{}"'.format(name))
-
+        validate_event_names(name, event_handlers)
         self.name = name
         self.event_handlers = event_handlers
 
-    def get_transitions(self):
+    @property
+    def transitions(self):
         transitions = []
         for event_handler in self.event_handlers:
             transitions.extend(event_handler.transitions)
         return transitions
 
-    transitions = property(get_transitions)
-
 
 class EventHandler(object):
     def __init__(self, event, transitions):
+        validate_guards(event, transitions)
         self.event = event
         self.transitions = transitions
 

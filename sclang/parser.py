@@ -12,9 +12,15 @@ sc_grammar = r'''
     attribute: event_handler | init | exit
     init: "@init" "/" action _NL
     exit: "@exit" "/" action _NL
-    event_handler: (event)? regular_transition [_INDENT (regular_transition)* else_transition? _DEDENT]
+    event_handler: eventless_handler | regular_event_handler
 
-    regular_transition: ("[" guard "]")? target
+    regular_event_handler: event transitions
+    eventless_handler: "_" transitions
+    transitions: unguarded_transition | guarded_transitions
+
+    unguarded_transition: target
+    guarded_transitions: guarded_transition [_INDENT (guarded_transition)* else_transition? _DEDENT]
+    guarded_transition: "[" guard "]" target
     else_transition: "[" "else" "]" target
     target: "->" state_path ("/" action)? _NL
 
@@ -64,14 +70,14 @@ class ScTransformer(Transformer):
     @v_args(inline=True)
     def state(self, state_name, *attribute):
         event_handlers = []
-        attributes = list(itertools.chain.from_iterable(attribute))
-        for attr in attributes:
+        for attr in attribute:
             if isinstance(attr, EventHandler):
                 event_handlers.append(attr)
         return State(state_name, event_handlers)
 
-    def attribute(self, children):
-        return children
+    @v_args(inline=True)
+    def attribute(self, attr):
+        return attr
 
     def init(self, children):
         return None
@@ -79,24 +85,37 @@ class ScTransformer(Transformer):
     def exit(self, children):
         return None
 
-    def event_handler(self, children):
-        assert len(children) >= 1
-        if isinstance(children[0], str):
-            event = children[0]
-            start_index = 1
-        else:
-            event = None
-            start_index = 0
+    @v_args(inline=True)
+    def event_handler(self, handler):
+        return handler
 
-        return EventHandler(event=event, transitions=children[start_index:])
+    @v_args(inline=True)
+    def regular_event_handler(self, event, transitions):
+        return EventHandler(event, transitions=transitions)
 
-    def regular_transition(self, children):
-        if len(children) == 1:
-            return Transition(**children[0])
-        if len(children) == 2:
-            children[1]['guard'] = children[0]
-            return Transition(**children[1])
+    @v_args(inline=True)
+    def eventless_handler(self, transitions):
+        return EventHandler(None, transitions=transitions)
+
+    @v_args(inline=True)
+    def transitions(self, transitions):
+        if isinstance(transitions, list):
+            return transitions
+        if isinstance(transitions, Transition):
+            return [transitions]
         assert False
+
+    def guarded_transitions(self, transitions):
+        return transitions
+
+    @v_args(inline=True)
+    def unguarded_transition(self, target):
+        return Transition(**target)
+
+    @v_args(inline=True)
+    def guarded_transition(self, guard, target):
+        target['guard'] = guard
+        return Transition(**target)
 
     @v_args(inline=True)
     def else_transition(self, target):
@@ -106,10 +125,8 @@ class ScTransformer(Transformer):
     def target(self, children):
         if len(children) == 1:
             return dict(target=children[0])
-
         if len(children) == 2:
             return dict(target=children[0], action=children[1])
-
         assert False
 
     @v_args(inline=True)

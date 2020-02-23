@@ -148,3 +148,112 @@ on
     assert sc.states[0].event_handlers[1].transitions[1].guard == 'count == 4'
     assert not sc.states[0].event_handlers[1].transitions[1].has_else_guard()
     assert sc.states[0].event_handlers[1].transitions[2].has_else_guard()
+
+
+def test_only_else_guard():
+    input = '''
+off
+  BUTTON_PRESS -> on
+  TIMEOUT [else] -> on
+
+on
+  TIMEOUT -> off
+'''
+    with pytest.raises(ParsingError):
+        parse(input)
+
+
+def test_else_not_final():
+    input = '''
+off
+  BUTTON_PRESS -> on
+  TIMEOUT ["count == 3"] -> off
+          [else] -> on
+          ["count == 4"] -> on
+
+on
+  TIMEOUT -> off
+'''
+    with pytest.raises(ParsingError):
+        parse(input)
+
+
+def test_else_guard_not_unique():
+    input = '''
+off
+  BUTTON_PRESS -> on
+  TIMEOUT ["count == 3"] -> off
+          [else] -> on
+          [else] -> off
+
+on
+  TIMEOUT -> off
+'''
+    with pytest.raises(ParsingError):
+        parse(input)
+
+
+def test_guard_not_unique():
+    input = '''
+off
+  BUTTON_PRESS -> on
+  TIMEOUT ["count == 3"] -> off
+          ["count == 3"] -> on
+          [else] -> off
+
+on
+  TIMEOUT -> off
+'''
+    with pytest.raises(ParsingError):
+        parse(input)
+
+
+def test_eventless():
+    input = '''
+off
+  _ -> on
+
+on
+  TIMEOUT -> off
+'''
+    parse(input)
+
+
+def test_eventless_not_unique():
+    input = '''
+off
+  _ -> on
+  _ -> off
+
+on
+  TIMEOUT -> off
+'''
+    with pytest.raises(ParsingError):
+        parse(input)
+
+
+def test_eventless_with_guard_not_unique():
+    input = '''
+off
+  _ ["count == 3"] -> on
+    ["count == 4"] -> off
+    ["count == 4"] -> on
+
+on
+  TIMEOUT -> off
+'''
+    with pytest.raises(ParsingError):
+        parse(input)
+
+
+def test_mix_eventless_regular():
+    input = '''
+off
+  TIMEOUT ["count == 3"] -> on
+  _ ["count == 6"] -> on
+    ["count == 4"] -> off
+
+on
+  TIMEOUT -> off
+'''
+    parse(input)

@@ -4,18 +4,35 @@ from graphviz import Digraph
 from .parser import parse, ParsingError
 
 
+def make_event_label(event_handler, transition):
+    event = '' if event_handler.event is None else event_handler.event
+    if transition.has_else_guard():
+        guard = '[else]'
+    elif transition.guard is not None:
+        guard = '[{}]'.format(transition.guard)
+    else:
+        guard = ''
+    if transition.action is None:
+        action = ''
+    else:
+        action = '/ {}'.format(transition.action)
+    return '{} {} {}'.format(event, guard, action)
+
+
 def graph(state_chart):
     dot = Digraph()
     if state_chart.states:
-        dot.node('entry', label='', shape='point')
+        dot.node('entry', label='', shape='point') 
     for state in state_chart.states:
         dot.node(state.name, label=state.name, shape='box', style='rounded')
 
     if state_chart.states:
         dot.edge('entry', state_chart.states[0].name)
     for state in state_chart.states:
-        for transition in state.transitions:
-            dot.edge(state.name, transition.target, label=transition.event)
+        for event_handler in state.event_handlers:
+            for transition in event_handler.transitions:
+                label = make_event_label(event_handler, transition)
+                dot.edge(state.name, transition.target, label=label)
     return dot
 
 
