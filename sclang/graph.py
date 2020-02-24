@@ -8,21 +8,6 @@ current_dir = os.path.dirname(__file__)
 template_dir = os.path.join(current_dir, 'templates')
 
 
-def make_event_label(event_handler, transition):
-    event = '' if event_handler.event is None else event_handler.event
-    if transition.has_else_guard():
-        guard = '[else]'
-    elif transition.guard is not None:
-        guard = '[{}]'.format(transition.guard)
-    else:
-        guard = ''
-    if transition.action is None:
-        action = ''
-    else:
-        action = '/ {}'.format(transition.action)
-    return '{} {} {}'.format(event, guard, action)
-
-
 def graph(state_chart):
     env = Environment(loader=FileSystemLoader(template_dir),
                       trim_blocks=True,
