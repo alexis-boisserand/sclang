@@ -1,0 +1,44 @@
+{% macro make_event_label(event_handler, transition) %}
+{% if event_handler.event is not none 
+   or transition.guard is not none
+   or transition.action is not none %}
+:
+{%- if event_handler.event is not none %}
+{{ event_handler.event }}
+{%- endif %}
+{%- if transition.has_else_guard() %}
+[else]
+{%- elif transition.guard is not none %}
+[{{ transition.guard }}]
+{% endif %}
+{%- if transition.action is not none %}
+/ {{ transition.action }}
+{% endif %}
+{% endif %}
+{% endmacro -%}
+
+@startuml
+skinparam ArrowFontColor #ba4452
+skinparam ArrowFontStyle Bold
+skinparam BackgroundColor White
+
+skinparam state {
+  StartColor #3e3c49
+  EndColor Red
+  BackgroundColor #a7b38d
+  BorderColor #3e3c49
+  ArrowColor #3e3c49
+  FontColor #3e3c49
+  FontStyle Bold
+}
+{% if state_chart.states %}
+[*] -> {{ state_chart.states[0].name }}
+{% endif %}
+{% for state in state_chart.states %}
+{% for event_handler in state.event_handlers %}
+{% for transition in event_handler.transitions %}
+{{ state.name }} -> {{ transition.target }}{{ make_event_label(event_handler, transition) }}
+{% endfor %}
+{% endfor %}
+{% endfor %}
+@enduml
