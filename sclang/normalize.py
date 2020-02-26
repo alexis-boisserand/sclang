@@ -1,6 +1,5 @@
 import re
 from enum import Enum
-from itertools import takewhile
 
 lower_case_reg = re.compile(r'([a-z]+_?)*[a-z]')
 upper_case_reg = re.compile(r'([A-Z]+_?)*[A-Z]')
@@ -55,11 +54,7 @@ def to_camel_case(tokens):
     return ''.join([token[:1].upper() + token[1:].lower() for token in tokens])
 
 
-def normalize(str_, style):
-    input_style = naming_style(str_)
-    if style in [input_style, NamingStyle.OTHER]:
-        return str_
-
+def tokenize(str_, input_style):
     if input_style in [NamingStyle.LOWER_CASE, NamingStyle.UPPER_CASE]:
         tokens = str_.split('_')
     elif input_style is NamingStyle.CAMEL_CASE:
@@ -76,19 +71,32 @@ def normalize(str_, style):
     else:
         assert False, 'unknown input style'
 
-    if style == NamingStyle.LOWER_CASE:
+    return tokens
+
+
+def assemble(tokens, output_style):
+    if output_style == NamingStyle.LOWER_CASE:
         return '_'.join([token.lower() for token in tokens])
 
-    if style == NamingStyle.UPPER_CASE:
+    if output_style == NamingStyle.UPPER_CASE:
         return '_'.join([token.upper() for token in tokens])
 
-    if style == NamingStyle.CAMEL_CASE:
+    if output_style == NamingStyle.CAMEL_CASE:
         return to_camel_case(tokens)
 
-    if style == NamingStyle.LOWER_CAMEL_CASE:
+    if output_style == NamingStyle.LOWER_CAMEL_CASE:
         return tokens[0].lower() + to_camel_case(tokens[1:])
 
     assert False, 'unknown style'
+
+
+def normalize(str_, style):
+    input_style = naming_style(str_)
+    if style in [input_style, NamingStyle.OTHER]:
+        return str_
+
+    tokens = tokenize(str_, input_style)
+    return assemble(tokens, style)
 
 
 def lower_case(str_):
