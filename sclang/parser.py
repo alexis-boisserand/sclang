@@ -1,4 +1,3 @@
-import itertools
 from lark import Lark, Transformer, v_args
 from lark.indenter import Indenter
 from lark.exceptions import LarkError
