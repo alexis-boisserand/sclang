@@ -6,10 +6,9 @@ from .state_chart import Transition, EventHandler, State, StateChart
 from .error import Error
 
 sc_grammar = r'''
-    start: (_NL* state)+
+    start: (_NL* attribute)+
+    attribute: event_handler | init | exit | state
     state: state_name _NL [_INDENT attribute* _DEDENT]
-
-    attribute: event_handler | init | exit
     init: "@init" action _NL
     exit: "@exit" action _NL
     event_handler: eventless_handler | regular_event_handler
@@ -44,6 +43,24 @@ sc_grammar = r'''
 '''
 
 
+def collect_attributes(attributes):
+    dict_ = {}
+    event_handlers = []
+    states = []
+    for attr in attributes:
+        if isinstance(attr, EventHandler):
+            event_handlers.append(attr)
+        elif isinstance(attr, dict):
+            dict_.update(attr)
+        elif isinstance(attr, State):
+            states.append(attr)
+        else:
+            assert False
+    dict_['event_handlers'] = event_handlers
+    dict_['states'] = states
+    return dict_
+
+
 class ParsingError(Error):
     def __str__(self):
         if self.__cause__ is None:
@@ -63,22 +80,12 @@ class ScIndenter(Indenter):
 
 class ScTransformer(Transformer):
     @v_args(inline=True)
-    def start(self, *states):
-        return StateChart(states)
+    def start(self, *attribute):
+        return StateChart(**collect_attributes(attribute))
 
     @v_args(inline=True)
     def state(self, state_name, *attribute):
-        event_handlers = []
-        extra_attrs = {}
-        for attr in attribute:
-            if isinstance(attr, EventHandler):
-                event_handlers.append(attr)
-            elif isinstance(attr, dict):
-                extra_attrs.update(attr)
-            else:
-                assert False
-
-        return State(state_name, event_handlers, **extra_attrs)
+        return State(state_name, **collect_attributes(attribute))
 
     @v_args(inline=True)
     def attribute(self, attr):

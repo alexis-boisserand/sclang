@@ -54,27 +54,19 @@ def validate_event_names(name, event_handlers):
         raise DefinitionError('events not unique in state "{}"'.format(name))
 
 
-class StateChart(object):
-    def __init__(self, states):
-        validate_states_names(states)
-        validate_transitions_targets(states)
-        validate_states_are_reachable(states)
-
-        self.states = states
-
-    def get_event_names(self):
-        events = set()
-        for state in self.states:
-            for event_handler in state.event_handlers:
-                events.add(event_handler.event)
-        return events
-
-
-class State(object):
-    def __init__(self, name, event_handlers=[], init=None, exit=None):
+class StateBase(object):
+    def __init__(self,
+                 name,
+                 event_handlers=[],
+                 states=[],
+                 init=None,
+                 exit=None):
         validate_event_names(name, event_handlers)
+        validate_states_names(states)
+        validate_states_are_reachable(states)
         self.name = name
         self.event_handlers = event_handlers
+        self.states = states
         self.init = init
         self.exit = exit
 
@@ -84,6 +76,29 @@ class State(object):
         for event_handler in self.event_handlers:
             transitions.extend(event_handler.transitions)
         return transitions
+
+
+class StateChart(StateBase):
+    def __init__(self, event_handlers=[], states=[], init=None, exit=None):
+        validate_transitions_targets(states)
+        super().__init__('', event_handlers, states, init, exit)
+
+    def get_event_names(self):
+        events = set()
+        for state in self.states:
+            for event_handler in state.event_handlers:
+                events.add(event_handler.event)
+        return events
+
+
+class State(StateBase):
+    def __init__(self,
+                 name,
+                 event_handlers=[],
+                 states=[],
+                 init=None,
+                 exit=None):
+        super().__init__(name, event_handlers, states, init, exit)
 
 
 class EventHandler(object):
