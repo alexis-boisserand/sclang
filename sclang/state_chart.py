@@ -71,10 +71,12 @@ class StateChart(object):
 
 
 class State(object):
-    def __init__(self, name, event_handlers=[]):
+    def __init__(self, name, event_handlers=[], init=None, exit=None):
         validate_event_names(name, event_handlers)
         self.name = name
         self.event_handlers = event_handlers
+        self.init = init
+        self.exit = exit
 
     @property
     def transitions(self):

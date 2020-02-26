@@ -10,8 +10,8 @@ sc_grammar = r'''
     state: state_name _NL [_INDENT attribute* _DEDENT]
 
     attribute: event_handler | init | exit
-    init: "@init" "/" action _NL
-    exit: "@exit" "/" action _NL
+    init: "@init" action _NL
+    exit: "@exit" action _NL
     event_handler: eventless_handler | regular_event_handler
 
     regular_event_handler: event transitions
@@ -22,10 +22,9 @@ sc_grammar = r'''
     guarded_transitions: guarded_transition [_INDENT (guarded_transition)* else_transition? _DEDENT]
     guarded_transition: "[" guard "]" target
     else_transition: "[" "else" "]" target
-    target: "->" state_path ("/" action)? _NL
+    target: "->" STATE_PATH (action)? _NL
 
     event: NAME
-    state_path: NAME
     state_name: NAME
     guard: STRING
     action: STRING
@@ -35,13 +34,13 @@ sc_grammar = r'''
     %declare _INDENT _DEDENT
     %ignore WS_INLINE
 
-    _NL: /(\r?\n[\t ]*)+/
-
+    STATE_PATH: ("../")*(NAME"/")*NAME
     NAME: LOWER_CASE | UPPER_CASE | CAMEL_CASE | LOWER_CAMEL_CASE
     LOWER_CASE: /([a-z]+_?)*[a-z]/
     UPPER_CASE: /([A-Z]+_?)*[A-Z]/
     CAMEL_CASE: /[A-Z][a-zA-Z]*/
     LOWER_CAMEL_CASE: /[a-z][a-zA-Z]*/
+    _NL: /(\r?\n[\t ]*)+/
 '''
 
 
@@ -70,20 +69,28 @@ class ScTransformer(Transformer):
     @v_args(inline=True)
     def state(self, state_name, *attribute):
         event_handlers = []
+        extra_attrs = {}
         for attr in attribute:
             if isinstance(attr, EventHandler):
                 event_handlers.append(attr)
-        return State(state_name, event_handlers)
+            elif isinstance(attr, dict):
+                extra_attrs.update(attr)
+            else:
+                assert False
+
+        return State(state_name, event_handlers, **extra_attrs)
 
     @v_args(inline=True)
     def attribute(self, attr):
         return attr
 
-    def init(self, children):
-        return None
+    @v_args(inline=True)
+    def init(self, action):
+        return dict(init=action)
 
-    def exit(self, children):
-        return None
+    @v_args(inline=True)
+    def exit(self, action):
+        return dict(exit=action)
 
     @v_args(inline=True)
     def event_handler(self, handler):

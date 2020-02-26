@@ -257,3 +257,21 @@ on
   TIMEOUT -> off
 '''
     parse(input)
+
+
+def test_actions():
+    input = '''
+off
+  @init "doSomething()"
+  TIMEOUT ["count == 3"] -> on
+  _ ["count == 6"] -> on "set(6)"
+    ["count == 4"] -> off
+
+on
+  @exit "doSomethingElse()"
+  TIMEOUT -> off
+'''
+    sc = parse(input)
+    sc.states[0].init = "doSomething()"
+    sc.states[0].event_handlers[1].transitions[0] = "set(6)"
+    sc.states[1].init = "doSomethingElse()"
