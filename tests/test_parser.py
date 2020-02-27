@@ -275,3 +275,47 @@ on
     sc.states[0].init = "doSomething()"
     sc.states[0].event_handlers[1].transitions[0] = "set(6)"
     sc.states[1].init = "doSomethingElse()"
+
+
+def test_simple_composite():
+    input = '''
+off
+  BUTTON_PRESS -> on
+  TIMEOUT -> off
+  not_really_off
+      SOME_EVENT -> really_off
+  really_off
+      OTHER_EVENT -> not_really_off
+on
+  TIMEOUT -> off
+'''
+    sc = parse(input)
+    assert sc.states[0].states[0].name == 'not_really_off'
+    assert sc.states[0].states[1].name == 'really_off'
+
+
+get_event_names_params = [('''
+off
+  BUTTON_PRESS -> on
+  TIMEOUT -> off
+
+on
+  TIMEOUT -> off
+''', ['BUTTON_PRESS', 'TIMEOUT']),
+                          ('''
+off
+  BUTTON_PRESS -> on
+  TIMEOUT -> off
+  not_really_off
+      SOME_EVENT -> really_off
+  really_off
+      OTHER_EVENT -> not_really_off
+on
+  TIMEOUT -> off
+''', ['BUTTON_PRESS', 'TIMEOUT', 'SOME_EVENT', 'OTHER_EVENT'])]
+
+
+@pytest.mark.parametrize('input, events', get_event_names_params)
+def test_get_event_names(input, events):
+    sc = parse(input)
+    assert (sc.get_event_names() == set(events))

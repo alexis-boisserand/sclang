@@ -84,11 +84,15 @@ class StateChart(StateBase):
         super().__init__('', event_handlers, states, init, exit)
 
     def get_event_names(self):
-        events = set()
-        for state in self.states:
-            for event_handler in state.event_handlers:
-                events.add(event_handler.event)
-        return events
+        def get_event_names_(state):
+            events = set()
+            for substate in state.states:
+                for event_handler in substate.event_handlers:
+                    events.add(event_handler.event)
+                events.update(get_event_names_(substate))
+            return events
+
+        return get_event_names_(self)
 
 
 class State(StateBase):
