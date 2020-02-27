@@ -1,3 +1,4 @@
+from pathlib import PurePosixPath
 from .error import Error
 
 
@@ -77,22 +78,32 @@ class StateBase(object):
             transitions.extend(event_handler.transitions)
         return transitions
 
+    @property
+    def state_paths(self):
+        paths = {self.name: self}
+        for state in self.states:
+            for path, substate in state.state_paths.items():
+                new_path = str(PurePosixPath(self.name, path))
+                paths[new_path] = substate
+        return paths
+
 
 class StateChart(StateBase):
     def __init__(self, event_handlers=[], states=[], init=None, exit=None):
         validate_transitions_targets(states)
-        super().__init__('', event_handlers, states, init, exit)
+        super().__init__('/', event_handlers, states, init, exit)
 
-    def get_event_names(self):
-        def get_event_names_(state):
+    @property
+    def event_names(self):
+        def event_names_(state):
             events = set()
             for substate in state.states:
                 for event_handler in substate.event_handlers:
                     events.add(event_handler.event)
-                events.update(get_event_names_(substate))
+                events.update(event_names_(substate))
             return events
 
-        return get_event_names_(self)
+        return event_names_(self)
 
 
 class State(StateBase):

@@ -277,7 +277,65 @@ on
     sc.states[1].init = "doSomethingElse()"
 
 
-def test_simple_composite():
+event_names_params = [('''
+off
+  BUTTON_PRESS -> on
+  TIMEOUT -> off
+
+on
+  TIMEOUT -> off
+''', ['BUTTON_PRESS', 'TIMEOUT']),
+                      ('''
+off
+  BUTTON_PRESS -> on
+  TIMEOUT -> off
+  not_really_off
+      SOME_EVENT -> really_off
+  really_off
+      OTHER_EVENT -> not_really_off
+on
+  TIMEOUT -> off
+''', ['BUTTON_PRESS', 'TIMEOUT', 'SOME_EVENT', 'OTHER_EVENT'])]
+
+
+@pytest.mark.parametrize('input, events', event_names_params)
+def test_event_names(input, events):
+    sc = parse(input)
+    assert (sc.event_names == set(events))
+
+
+state_paths_params = [('''
+off
+  BUTTON_PRESS -> on
+  TIMEOUT -> off
+
+on
+  TIMEOUT -> off
+''', ['/', '/on', '/off']),
+                      ('''
+off
+  BUTTON_PRESS -> on
+  TIMEOUT -> off
+  not_really_off
+      SOME_EVENT -> really_off
+      what
+  really_off
+      OTHER_EVENT -> not_really_off
+on
+  TIMEOUT -> off
+''', [
+                          '/', '/on', '/off', '/off/not_really_off',
+                          '/off/not_really_off/what', '/off/really_off'
+                      ])]
+
+
+@pytest.mark.parametrize('input, state_paths', state_paths_params)
+def test_list_states(input, state_paths):
+    sc = parse(input)
+    assert set(sc.state_paths.keys()) == set(state_paths)
+
+
+def test_composite():
     input = '''
 off
   BUTTON_PRESS -> on
@@ -294,15 +352,8 @@ on
     assert sc.states[0].states[1].name == 'really_off'
 
 
-get_event_names_params = [('''
-off
-  BUTTON_PRESS -> on
-  TIMEOUT -> off
-
-on
-  TIMEOUT -> off
-''', ['BUTTON_PRESS', 'TIMEOUT']),
-                          ('''
+def test_composite():
+    input = '''
 off
   BUTTON_PRESS -> on
   TIMEOUT -> off
@@ -312,10 +363,26 @@ off
       OTHER_EVENT -> not_really_off
 on
   TIMEOUT -> off
-''', ['BUTTON_PRESS', 'TIMEOUT', 'SOME_EVENT', 'OTHER_EVENT'])]
-
-
-@pytest.mark.parametrize('input, events', get_event_names_params)
-def test_get_event_names(input, events):
+'''
     sc = parse(input)
-    assert (sc.get_event_names() == set(events))
+    assert sc.states[0].states[0].name == 'not_really_off'
+    assert sc.states[0].states[1].name == 'really_off'
+
+
+def test_composte_valid_target_path():
+    input = '''
+off
+  BUTTON_PRESS -> on
+  TIMEOUT -> off
+  not_really_off
+      SOME_EVENT -> /off
+      what
+  really_off
+      OTHER_EVENT -> ../on
+on
+  TIMEOUT ["i==3"] -> off/really_off
+          [else] -> /off/not_really_off/what
+  what
+    _ -> ../off
+'''
+    #parse(input)
