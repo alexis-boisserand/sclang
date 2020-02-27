@@ -372,23 +372,6 @@ on
     assert sc.states[0].states[1].name == 'really_off'
 
 
-def test_composite():
-    input = '''
-off
-  BUTTON_PRESS -> on
-  TIMEOUT -> off
-  not_really_off
-      SOME_EVENT -> really_off
-  really_off
-      OTHER_EVENT -> not_really_off
-on
-  TIMEOUT -> off
-'''
-    sc = parse(input)
-    assert sc.states[0].states[0].name == 'not_really_off'
-    assert sc.states[0].states[1].name == 'really_off'
-
-
 def test_composite_valid_target_path():
     input = '''
 off
