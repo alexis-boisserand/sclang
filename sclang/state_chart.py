@@ -61,8 +61,10 @@ class StateBase(object):
         return paths
 
     def _validate_event_names(self):
-        if not unique(
-            [event_handler.event for event_handler in self.event_handlers]):
+        event_names = [
+            event_handler.event for event_handler in self.event_handlers
+        ]
+        if not unique(event_names):
             raise DefinitionError('events not unique in state "{}"'.format(
                 self.name))
 
