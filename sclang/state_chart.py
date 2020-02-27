@@ -15,46 +15,6 @@ def unique(list_):
     return True
 
 
-def validate_guards(event, transitions):
-    guards = [transition.guard for transition in transitions]
-    if not unique(guards):
-        raise DefinitionError(
-            'guards are not unique for event "{}"'.format(event))
-
-
-def validate_states_names(states):
-    if not unique([state.name for state in states]):
-        raise DefinitionError('state names must be unique')
-
-
-def validate_transitions_targets(states):
-    states_names = [state.name for state in states]
-    for state in states:
-        for transition in state.transitions:
-            if transition.target not in states_names:
-                raise DefinitionError(
-                    'invalid transition target name "{}" in state "{}"'.format(
-                        transition.target, state.name))
-
-
-def validate_states_are_reachable(states):
-    for dest in states[1:]:
-        target_names = []
-        for src in states:
-            if src is not dest:
-                for transition in src.transitions:
-                    target_names.append(transition.target)
-
-        if dest.name not in target_names:
-            raise DefinitionError('state "{}" is unreachable'.format(
-                dest.name))
-
-
-def validate_event_names(name, event_handlers):
-    if not unique([event_handler.event for event_handler in event_handlers]):
-        raise DefinitionError('events not unique in state "{}"'.format(name))
-
-
 class StateBase(object):
     def __init__(self,
                  name,
@@ -62,14 +22,14 @@ class StateBase(object):
                  states=[],
                  init=None,
                  exit=None):
-        validate_event_names(name, event_handlers)
-        validate_states_names(states)
-        validate_states_are_reachable(states)
         self.name = name
         self.event_handlers = event_handlers
         self.states = states
         self.init = init
         self.exit = exit
+        self._validate_event_names()
+        self._validate_states_are_reachable()
+        self._validate_states_names()
 
     @property
     def transitions(self):
@@ -87,11 +47,33 @@ class StateBase(object):
                 paths[new_path] = substate
         return paths
 
+    def _validate_event_names(self):
+        if not unique(
+            [event_handler.event for event_handler in self.event_handlers]):
+            raise DefinitionError('events not unique in state "{}"'.format(
+                self.name))
+
+    def _validate_states_are_reachable(self):
+        for dest in self.states[1:]:
+            target_names = []
+            for src in self.states:
+                if src is not dest:
+                    for transition in src.transitions:
+                        target_names.append(transition.target)
+
+            if dest.name not in target_names:
+                raise DefinitionError('state "{}" is unreachable'.format(
+                    dest.name))
+
+    def _validate_states_names(self):
+        if not unique([state.name for state in self.states]):
+            raise DefinitionError('state names must be unique')
+
 
 class StateChart(StateBase):
     def __init__(self, event_handlers=[], states=[], init=None, exit=None):
-        validate_transitions_targets(states)
         super().__init__('/', event_handlers, states, init, exit)
+        self._validate_transitions_targets()
 
     @property
     def event_names(self):
@@ -104,6 +86,15 @@ class StateChart(StateBase):
             return events
 
         return event_names_(self)
+
+    def _validate_transitions_targets(self):
+        states_names = [state.name for state in self.states]
+        for state in self.states:
+            for transition in state.transitions:
+                if transition.target not in states_names:
+                    raise DefinitionError(
+                        'invalid transition target name "{}" in state "{}"'.
+                        format(transition.target, state.name))
 
 
 class State(StateBase):
@@ -118,9 +109,15 @@ class State(StateBase):
 
 class EventHandler(object):
     def __init__(self, event, transitions):
-        validate_guards(event, transitions)
         self.event = event
         self.transitions = transitions
+        self._validate_guards()
+
+    def _validate_guards(self):
+        guards = [transition.guard for transition in self.transitions]
+        if not unique(guards):
+            raise DefinitionError(
+                'guards are not unique for event "{}"'.format(self.event))
 
 
 class Transition(object):
