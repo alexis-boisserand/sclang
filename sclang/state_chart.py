@@ -1,4 +1,5 @@
 from pathlib import PurePosixPath
+from collections import OrderedDict
 from .error import Error
 
 
@@ -40,7 +41,8 @@ class StateBase(object):
 
     @property
     def state_paths(self):
-        paths = {self.name: self}
+        paths = OrderedDict()
+        paths[self.name] = self
         for state in self.states:
             for path, substate in state.state_paths.items():
                 new_path = str(PurePosixPath(self.name, path))

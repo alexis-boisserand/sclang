@@ -333,6 +333,7 @@ on
 def test_list_states(input, state_paths):
     sc = parse(input)
     assert set(sc.state_paths.keys()) == set(state_paths)
+    print(sc.state_paths.keys())
 
 
 def test_composite():
@@ -369,7 +370,7 @@ on
     assert sc.states[0].states[1].name == 'really_off'
 
 
-def test_composte_valid_target_path():
+def test_composite_valid_target_path():
     input = '''
 off
   BUTTON_PRESS -> on
