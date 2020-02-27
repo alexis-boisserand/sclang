@@ -28,9 +28,20 @@ class StateBase(object):
         self.states = states
         self.init = init
         self.exit = exit
+        for state in self.states:
+            state.parent = self
         self._validate_event_names()
         self._validate_states_are_reachable()
         self._validate_states_names()
+
+    @property
+    def path(self):
+        elements = [self.name]
+        parent = self.parent
+        while parent.parent is not None:
+            elements.append(parent.name)
+            parent = parent.parent
+        return '/' + '/'.join(reversed(elements))
 
     @property
     def transitions(self):
@@ -75,7 +86,12 @@ class StateBase(object):
 class StateChart(StateBase):
     def __init__(self, event_handlers=[], states=[], init=None, exit=None):
         super().__init__('/', event_handlers, states, init, exit)
+        self.parent = None
         self._validate_transitions_targets()
+
+    @property
+    def path(self):
+        return self.name
 
     @property
     def event_names(self):

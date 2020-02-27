@@ -330,10 +330,29 @@ on
 
 
 @pytest.mark.parametrize('input, state_paths', state_paths_params)
-def test_list_states(input, state_paths):
+def test_state_paths(input, state_paths):
     sc = parse(input)
     assert set(sc.state_paths.keys()) == set(state_paths)
-    print(sc.state_paths.keys())
+
+
+def test_path():
+    input = '''
+off
+  BUTTON_PRESS -> on
+  TIMEOUT -> off
+  not_really_off
+      SOME_EVENT -> really_off
+      what
+  really_off
+      OTHER_EVENT -> not_really_off
+on
+  TIMEOUT -> off
+'''
+    sc = parse(input)
+    assert sc.path == '/'
+    assert sc.states[0].path == '/off'
+    assert sc.states[0].states[1].path == '/off/really_off'
+    assert sc.states[0].states[0].states[0].path == '/off/not_really_off/what'
 
 
 def test_composite():
