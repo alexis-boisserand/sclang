@@ -32,7 +32,7 @@ sc_grammar = r'''
     %declare _INDENT _DEDENT
     %ignore WS_INLINE
 
-    STATE_PATH: (("../")|"/")*(NAME"/")*NAME
+    STATE_PATH: ("../")*(NAME"/")*NAME
     NAME: LOWER_CASE | UPPER_CASE | CAMEL_CASE | LOWER_CAMEL_CASE
     LOWER_CASE: /([a-z]+_?)*[a-z]/
     UPPER_CASE: /([A-Z]+_?)*[A-Z]/

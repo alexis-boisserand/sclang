@@ -31,8 +31,8 @@ class StateBase(object):
         for state in self.states:
             state.parent = self
         self._validate_event_names()
-        self._validate_states_are_reachable()
         self._validate_states_names()
+        self._validate_states_are_reachable()
 
     @property
     def path(self):
@@ -69,6 +69,7 @@ class StateBase(object):
                 self.name))
 
     def _validate_states_are_reachable(self):
+
         for dest in self.states[1:]:
             target_names = []
             for src in self.states:
@@ -124,6 +125,7 @@ class State(StateBase):
                  states=[],
                  init=None,
                  exit=None):
+        assert name
         super().__init__(name, event_handlers, states, init, exit)
 
 

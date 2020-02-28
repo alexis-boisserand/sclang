@@ -378,13 +378,13 @@ off
   BUTTON_PRESS -> on
   TIMEOUT -> off
   not_really_off
-      SOME_EVENT -> /off
+      SOME_EVENT -> off
       what
   really_off
       OTHER_EVENT -> ../on
 on
   TIMEOUT ["i==3"] -> off/really_off
-          [else] -> /off/not_really_off/what
+          [else] -> off/not_really_off/what
   what
     _ -> ../off
 '''
