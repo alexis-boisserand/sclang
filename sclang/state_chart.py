@@ -1,4 +1,4 @@
-from pathlib import PurePosixPath
+#from pathlib import PurePosixPath
 from collections import OrderedDict
 from .error import Error
 
@@ -55,8 +55,11 @@ class StateBase(object):
         paths = OrderedDict()
         paths[self.name] = self
         for state in self.states:
-            for path, substate in state.state_paths.items():
-                new_path = str(PurePosixPath(self.name, path))
+            for path_, substate in state.state_paths.items():
+                if self.name == '/':
+                    new_path = '/' + path_
+                else:
+                    new_path = self.name + '/' + path_
                 paths[new_path] = substate
         return paths
 
@@ -114,8 +117,8 @@ class StateChart(StateBase):
             for transition in state.transitions:
                 if transition.target not in states_names:
                     raise DefinitionError(
-                        'invalid transition target name "{}" in state "{}"'.
-                        format(transition.target, state.name))
+                        'invalid transition state path name "{}" in state "{}"'
+                        .format(transition.target, state.name))
 
 
 class State(StateBase):

@@ -379,6 +379,7 @@ off
   TIMEOUT -> off
   not_really_off
       SOME_EVENT -> off
+      EVENT -> really_off
       what
   really_off
       OTHER_EVENT -> ../on
