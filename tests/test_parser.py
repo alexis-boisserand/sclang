@@ -88,8 +88,9 @@ off
 on
   TIMEOUT -> offf
 '''
-    with pytest.raises(ParsingError):
+    with pytest.raises(ParsingError) as exc:
         parse(input)
+    assert 'invalid transition target' in str(exc.value)
 
 
 def test_unreachable_state():
@@ -105,7 +106,7 @@ on
         parse(input)
 
 
-def test_transition_not_unique():
+def test_events_not_unique():
     input = '''
 off
   BUTTON_PRESS -> on
@@ -115,8 +116,9 @@ off
 on
   TIMEOUT -> off
 '''
-    with pytest.raises(ParsingError):
+    with pytest.raises(ParsingError) as exc:
         parse(input)
+    assert 'event handler not unique' in str(exc.value)
 
 
 def test_guard():
@@ -378,7 +380,7 @@ off
   BUTTON_PRESS -> on
   TIMEOUT -> off
   not_really_off
-      SOME_EVENT -> off
+      SOME_EVENT -> ../off
       EVENT -> really_off
       what
   really_off
@@ -389,4 +391,46 @@ on
   what
     _ -> ../off
 '''
-    #parse(input)
+    parse(input)
+
+
+composite_invalid_target_path_params = [
+    '''
+off
+  BUTTON_PRESS -> on
+  TIMEOUT -> off
+  not_really_off
+      SOME_EVENT -> ../off
+      EVENT -> really_off
+      what
+  really_off
+      OTHER_EVENT -> ../on
+on
+  TIMEOUT ["i==3"] -> really_off
+          [else] -> off/not_really_off/what
+  what
+    _ -> ../off
+''', '''
+off
+  BUTTON_PRESS -> on
+  TIMEOUT -> off
+  not_really_off
+      SOME_EVENT -> ../off
+      EVENT -> really_off
+      what
+  really_off
+      OTHER_EVENT -> ../on
+on
+  TIMEOUT ["i==3"] -> off/really_off
+          [else] -> off/what
+  what
+    _ -> ../off
+'''
+]
+
+
+@pytest.mark.parametrize('input', composite_invalid_target_path_params)
+def test_composite_invalid_target_path(input):
+    with pytest.raises(ParsingError) as exc:
+        input = parse(input)
+    assert 'invalid transition target' in str(exc.value)
