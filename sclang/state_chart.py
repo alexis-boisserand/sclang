@@ -56,10 +56,15 @@ class StateBase(object):
         self.states = states
         self.init = init
         self.exit = exit
-        for state in self.states:
-            state.parent = self
         self._validate_event_names()
         self._validate_states_names()
+        for state in self.states:
+            state.parent = self
+        for event_handler in self.event_handlers:
+            event_handler.state = self
+        for transition in self.transitions:
+            transition.state = self
+
 
     @property
     def initial(self):
@@ -182,6 +187,8 @@ class EventHandler(object):
     def __init__(self, event, transitions):
         self.event = event
         self.transitions = transitions
+        for transition in self.transitions:
+            transition.event_handler = self
         self._validate_guards()
 
     def _validate_guards(self):
@@ -198,6 +205,13 @@ class Transition(object):
         self.target = target
         self.guard = guard
         self.action = action
+
+    @property
+    def target_path(self):
+        if self.target == '/':
+            return '/'
+        if self.target == '.':
+            return self.state.path
 
     def has_else_guard(self):
         return self.guard is Transition.else_guard
