@@ -65,7 +65,6 @@ class StateBase(object):
         for transition in self.transitions:
             transition.state = self
 
-
     @property
     def initial(self):
         assert self.parent and len(self.parent.states) > 0
@@ -140,23 +139,12 @@ class StateChart(StateBase):
 
     def _validate_transitions_targets(self):
         state_paths = self.state_paths
-
-        for path, state in state_paths.items():
+        for state in state_paths.values():
             for transition in state.transitions:
-                parent_path = parent(path)
-                transition_path = resolve(join(parent_path, transition.target))
-                if transition_path not in state_paths.keys():
+                if transition.target_path not in state_paths.keys():
                     raise DefinitionError(
                         'invalid transition target "{}" in state "{}"'.format(
                             transition.target, state.name))
-
-        #states_names = [state.name for state in self.states]
-        #for state in self.states:
-        #    for transition in state.transitions:
-        #        if transition.target not in states_names:
-        #            raise DefinitionError(
-        #                'invalid transition state path name "{}" in state "{}"'
-        #                .format(transition.target, state.name))
 
     def _validate_states_are_reachable(self):
 
@@ -208,10 +196,40 @@ class Transition(object):
 
     @property
     def target_path(self):
-        if self.target == '/':
-            return '/'
+        def raise_invalid():
+            raise DefinitionError(
+                'target path "{}" in state "{}" is invalid'.format(
+                    self.target, self.state.name))
+
         if self.target == '.':
             return self.state.path
+
+        if self.target == '..':
+            if self.state.parent is None:
+                raise_invalid()
+            return self.state.parent.path
+
+        if self.target.startswith('/'):
+            return self.target
+
+        if self.target.startswith('..'):
+            if self.state.parent is None:
+                raise_invalid()
+            elements = self.state.parent.path.lstrip('/').split('/')
+            target_elements = self.target.split('/')
+            for i, element in enumerate(target_elements):
+                if element != '..':
+                    break
+            if i > len(elements):
+                raise_invalid()
+            return '/' + '/'.join(elements[:-i] + target_elements[i:])
+
+        if self.target.startswith('.'):
+            return self.state.path + self.target.lstrip('.')
+
+        if self.state.parent is None:
+            raise_invalid()
+        return join(self.state.parent.path, self.target)
 
     def has_else_guard(self):
         return self.guard is Transition.else_guard
