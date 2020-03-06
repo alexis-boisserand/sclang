@@ -297,9 +297,9 @@ off
   BUTTON_PRESS -> on
   TIMEOUT -> off
   not_really_off
-      SOME_EVENT -> really_off
+    SOME_EVENT -> really_off
   really_off
-      OTHER_EVENT -> not_really_off
+    OTHER_EVENT -> not_really_off
 on
   TIMEOUT -> off
 ''', ['BUTTON_PRESS', 'TIMEOUT', 'SOME_EVENT', 'OTHER_EVENT'])]
@@ -324,10 +324,10 @@ off
   BUTTON_PRESS -> on
   TIMEOUT -> off
   not_really_off
-      SOME_EVENT -> really_off
-      what
+    SOME_EVENT -> really_off
+    what
   really_off
-      OTHER_EVENT -> not_really_off
+    OTHER_EVENT -> not_really_off
 on
   TIMEOUT -> off
 ''', [
@@ -348,15 +348,14 @@ off
   BUTTON_PRESS -> on
   TIMEOUT -> off
   not_really_off
-      SOME_EVENT -> really_off
-      what
+    SOME_EVENT -> really_off
+    what
   really_off
-      OTHER_EVENT -> not_really_off
+    OTHER_EVENT -> not_really_off
 on
   TIMEOUT -> off
 '''
     sc = parse(input)
-    assert sc.path == '/'
     assert sc.states[0].path == '/off'
     assert sc.states[0].states[1].path == '/off/really_off'
     assert sc.states[0].states[0].states[0].path == '/off/not_really_off/what'
@@ -368,9 +367,9 @@ off
   BUTTON_PRESS -> on
   TIMEOUT -> off
   not_really_off
-      SOME_EVENT -> really_off
+    SOME_EVENT -> really_off
   really_off
-      OTHER_EVENT -> not_really_off
+    OTHER_EVENT -> not_really_off
 on
   TIMEOUT -> off
 '''
@@ -385,12 +384,12 @@ off
   BUTTON_PRESS -> on
   TIMEOUT -> off
   not_really_off
-      SOME_EVENT -> ../off
-      EVENT -> really_off
-      THIRD_EVENT -> not_really_off/what
-      what
+    SOME_EVENT -> ../off
+    EVENT -> really_off
+    THIRD_EVENT -> not_really_off/what
+    what
   really_off
-      OTHER_EVENT -> ../on/what
+    OTHER_EVENT -> ../on/what
 on
   TIMEOUT ["i==3"] -> off/really_off
           [else] -> off/not_really_off/what
@@ -402,30 +401,30 @@ on
         2].target_path == '/off/not_really_off/what'
 
 
-composite_invalid_target_path_params = [
-    '''
+composite_invalid_transition_target_params = [('''
 off
   BUTTON_PRESS -> on
   TIMEOUT -> off
   not_really_off
-      SOME_EVENT -> ../off
-      EVENT -> really_off
-      what
+    SOME_EVENT -> ../off
+    EVENT -> really_off
+    what
   really_off
-      OTHER_EVENT -> ../on
+    OTHER_EVENT -> ../on
 on
   TIMEOUT ["i==3"] -> really_off
           [else] -> off/not_really_off/what
   what
     _ -> ../off
-''', '''
+''', 'really_off', 'on'),
+                                              ('''
 off
   BUTTON_PRESS -> on
   TIMEOUT -> off
   not_really_off
-      SOME_EVENT -> ../off
-      EVENT -> really_off
-      what
+    SOME_EVENT -> ../off
+    EVENT -> really_off
+    what
   really_off
       OTHER_EVENT -> ../on
 on
@@ -433,12 +432,83 @@ on
           [else] -> off/what
   what
     _ -> ../off
-'''
-]
+''', 'off/what', 'on')]
 
 
-@pytest.mark.parametrize('input', composite_invalid_target_path_params)
-def test_composite_invalid_target_path(input):
+@pytest.mark.parametrize('input, target, state',
+                         composite_invalid_transition_target_params)
+def test_composite_invalid_transition_target(input, target, state):
     with pytest.raises(ParsingError) as exc:
-        input = parse(input)
-    assert 'invalid transition target' in str(exc.value)
+        parse(input)
+    assert 'invalid transition target "{}" in state "{}"'.format(
+        target, state) in str(exc.value)
+
+
+invalid_target_path_params = [('''
+off
+  BUTTON_PRESS -> on
+  TIMEOUT -> off
+  OTHER -> ../on
+  not_really_off
+    SOME_EVENT -> ../off
+    EVENT -> really_off
+    THIRD_EVENT -> not_really_off/what
+    what
+  really_off
+      OTHER_EVENT -> ../on/what
+on
+  TIMEOUT ["i==3"] -> off/really_off
+          [else] -> off/not_really_off/what
+  what
+    _ -> ../on
+''', '../on', 'off'),
+                              ('''
+off
+  BUTTON_PRESS -> on
+  TIMEOUT -> off
+  not_really_off
+    SOME_EVENT -> ../../off
+    EVENT -> really_off
+    THIRD_EVENT -> not_really_off/what
+    what
+  really_off
+    OTHER_EVENT -> ../on/what
+on
+  TIMEOUT ["i==3"] -> off/really_off
+          [else] -> off/not_really_off/what
+  what
+    _ -> ../on
+''', '../../off', 'not_really_off')]
+
+
+@pytest.mark.parametrize('input, target, state', invalid_target_path_params)
+def test_invalid_target_path(input, target, state):
+    with pytest.raises(ParsingError) as exc:
+        parse(input)
+    assert 'target path "{}" in state "{}" is invalid'.format(
+        target, state) in str(exc.value)
+
+
+def test_composite_state_names_not_unique():
+    input = '''
+off
+  BUTTON_PRESS -> on
+  TIMEOUT -> off
+  not_really_off
+    SOME_EVENT -> ../off
+    EVENT -> really_off
+    THIRD_EVENT -> not_really_off/what
+    what
+  really_off
+      OTHER_EVENT -> ../on/what
+  not_really_off
+    _ -> ../on
+on
+  TIMEOUT ["i==3"] -> off/really_off
+          [else] -> off/not_really_off/what
+  what
+    _ -> ../on
+'''
+    with pytest.raises(ParsingError) as exc:
+        parse(input)
+    assert 'state name not unique in state "off"' in str(exc.value)

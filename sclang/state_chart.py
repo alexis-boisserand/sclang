@@ -23,38 +23,11 @@ def join(path1, path2):
     return path1 + '/' + path2
 
 
-def parent(abs_path):
-    assert abs_path.startswith('/')
-    elements = abs_path[1:].split('/')
-    return '/' + '/'.join(elements[:-1])
-
-
-def resolve(abs_path):
-    assert abs_path.startswith('/')
-    elements = abs_path[1:].split('/')
-    new_elements = []
-    for element in elements:
-        if element == '..':
-            try:
-                new_elements.pop()
-            except IndexError:
-                raise DefinitionError('invalid path "{}"'.format(abs_path))
-        else:
-            new_elements.append(element)
-    return '/' + '/'.join(new_elements)
-
-
 class StateBase(object):
     def __init__(self, name, states=[]):
         self.name = name
         self.states = states
         self._validate_states_names()
-        for state in self.states:
-            state.parent = self
-
-    @property
-    def path(self):
-        raise NotImplementedError
 
     def _validate_states_names(self):
         if not unique([state.name for state in self.states]):
@@ -65,13 +38,10 @@ class StateBase(object):
 class StateChart(StateBase):
     def __init__(self, states=[]):
         super().__init__('/', states)
-        self.parent = None
+        for state in self.states:
+            state.parent = None
         self._validate_transitions_targets()
         self._validate_states_are_reachable()
-
-    @property
-    def path(self):
-        return self.name
 
     @property
     def state_paths(self):
@@ -133,17 +103,19 @@ class State(StateBase):
         self.event_handlers = event_handlers
         self.init = init
         self.exit = exit
-        self._validate_event_names()
+        for state in self.states:
+            state.parent = self
         for event_handler in self.event_handlers:
             event_handler.state = self
         for transition in self.transitions:
             transition.state = self
+        self._validate_event_names()
 
     @property
     def path(self):
         elements = [self.name]
         parent = self.parent
-        while parent.parent is not None:
+        while parent is not None:
             elements.append(parent.name)
             parent = parent.parent
         return '/' + '/'.join(reversed(elements))
@@ -206,9 +178,8 @@ class Transition(object):
                 raise_invalid()
             return '/' + '/'.join(elements[:-i] + target_elements[i:])
 
-        if self.state.parent is None:
-            raise_invalid()
-        return join(self.state.parent.path, self.target)
+        prefix_path = self.state.parent.path if self.state.parent else '/'
+        return join(prefix_path, self.target)
 
     def has_else_guard(self):
         return self.guard is Transition.else_guard
