@@ -201,17 +201,6 @@ class Transition(object):
                 'target path "{}" in state "{}" is invalid'.format(
                     self.target, self.state.name))
 
-        if self.target == '.':
-            return self.state.path
-
-        if self.target == '..':
-            if self.state.parent is None:
-                raise_invalid()
-            return self.state.parent.path
-
-        if self.target.startswith('/'):
-            return self.target
-
         if self.target.startswith('..'):
             if self.state.parent is None:
                 raise_invalid()
@@ -223,9 +212,6 @@ class Transition(object):
             if i > len(elements):
                 raise_invalid()
             return '/' + '/'.join(elements[:-i] + target_elements[i:])
-
-        if self.target.startswith('.'):
-            return self.state.path + self.target.lstrip('.')
 
         if self.state.parent is None:
             raise_invalid()

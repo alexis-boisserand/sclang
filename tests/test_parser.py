@@ -378,13 +378,14 @@ def test_composite_valid_target_path():
     input = '''
 off
   BUTTON_PRESS -> on
-  TIMEOUT -> .
+  TIMEOUT -> off
   not_really_off
-      SOME_EVENT -> ..
+      SOME_EVENT -> ../off
       EVENT -> really_off
+      THIRD_EVENT -> not_really_off/what
       what
   really_off
-      OTHER_EVENT -> /on/what
+      OTHER_EVENT -> ../on/what
 on
   TIMEOUT ["i==3"] -> off/really_off
           [else] -> off/not_really_off/what

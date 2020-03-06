@@ -5,9 +5,9 @@ from .state_chart import Transition, EventHandler, State, StateChart
 from .error import Error
 
 sc_grammar = r'''
-    start: (_NL* attribute)+
-    attribute: event_handler | init | exit | state
+    start: (_NL* state)+
     state: state_name _NL [_INDENT attribute* _DEDENT]
+    attribute: event_handler | init | exit | state
     init: "@init" action _NL
     exit: "@exit" action _NL
     event_handler: eventless_handler | regular_event_handler
@@ -32,7 +32,7 @@ sc_grammar = r'''
     %declare _INDENT _DEDENT
     %ignore WS_INLINE
 
-    STATE_PATH: ("/" | "./" | ("../")*) (NAME"/")* NAME | "/" | ".." | "."
+    STATE_PATH: ("../")* (NAME"/")* NAME
     NAME: LOWER_CASE | UPPER_CASE | CAMEL_CASE | LOWER_CAMEL_CASE
     LOWER_CASE: /([a-z]+_?)*[a-z]/
     UPPER_CASE: /([A-Z]+_?)*[A-Z]/
