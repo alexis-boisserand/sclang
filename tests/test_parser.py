@@ -376,6 +376,14 @@ on
     sc = parse(input)
     assert sc.states[0].states[0].name == 'not_really_off'
     assert sc.states[0].states[1].name == 'really_off'
+    assert sc.states[1].is_root
+    assert not sc.states[0].states[1].is_root
+    assert sc.states[0].is_initial
+    assert not sc.states[1].is_initial
+    assert sc.states[1].is_atomic
+    assert not sc.states[0].is_atomic
+    assert sc.states[0].states[0].is_initial
+    assert sc.states[0].states[0].is_atomic
 
 
 def test_composite_valid_target_path():
@@ -512,3 +520,45 @@ on
     with pytest.raises(ParsingError) as exc:
         parse(input)
     assert 'state name not unique in state "off"' in str(exc.value)
+
+
+def test_composite_unreachable_state():
+    input = '''
+off
+  BUTTON_PRESS -> on
+  TIMEOUT -> off
+  not_really_off
+    SOME_EVENT -> ../off
+    THIRD_EVENT -> not_really_off/what
+    what
+  really_off
+    OTHER_EVENT -> ../on/what
+on
+  TIMEOUT ["i==3"] -> on/what
+          [else] -> off/not_really_off/what
+  what
+    _ -> ../off
+'''
+    with pytest.raises(ParsingError) as exc:
+        parse(input)
+    assert 'state "really_off" is unreachable' in str(exc.value)
+
+
+def test_composite_reachable_state():
+    input = '''
+off
+  BUTTON_PRESS -> on
+  TIMEOUT -> off
+  not_really_off
+    SOME_EVENT -> ../off
+    THIRD_EVENT -> not_really_off/what
+    what
+  really_off
+    OTHER_EVENT -> ../on/what
+on
+  TIMEOUT ["i==3"] -> on/what
+          [else] -> off/not_really_off/what
+  what
+    _ -> ../off/really_off
+'''
+    parse(input)

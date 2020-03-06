@@ -27,6 +27,8 @@ class StateBase(object):
     def __init__(self, name, states=[]):
         self.name = name
         self.states = states
+        for state in self.states:
+            state.parent = self
         self._validate_states_names()
 
     def _validate_states_names(self):
@@ -38,8 +40,6 @@ class StateBase(object):
 class StateChart(StateBase):
     def __init__(self, states=[]):
         super().__init__('/', states)
-        for state in self.states:
-            state.parent = None
         self._validate_transitions_targets()
         self._validate_states_are_reachable()
 
@@ -79,16 +79,34 @@ class StateChart(StateBase):
                             transition.target, state.name))
 
     def _validate_states_are_reachable(self):
-        for dest in self.states[1:]:
-            target_names = []
-            for src in self.states:
-                if src is not dest:
-                    for transition in src.transitions:
-                        target_names.append(transition.target)
+        # all states are reachable
+        # if all atomic states are reachable
+        # either by being the transition target of a reachable state
+        # or by being the initial state of a reachable state
+        state_paths = self.state_paths
+        assert len(state_paths) > 0
 
-            if dest.name not in target_names:
+        def next_(srcs):
+            dests = []
+            for src in srcs:
+                for transition in src.transitions:
+                    dest = state_paths[transition.target_path]
+                    if not dest in reachables:
+                        dests.append(dest)
+                if not src.is_atomic and not src.initial in reachables:
+                    dests.append(src.initial)
+            return dests
+
+        srcs = [self.states[0]]
+        reachables = set(srcs)
+        while len(srcs) > 0:
+            srcs = next_(srcs)
+            reachables.update(srcs)
+
+        for state in state_paths.values():
+            if state.is_atomic and state not in reachables:
                 raise DefinitionError('state "{}" is unreachable'.format(
-                    dest.name))
+                    state.name))
 
 
 class State(StateBase):
@@ -98,13 +116,10 @@ class State(StateBase):
                  states=[],
                  init=None,
                  exit=None):
-        assert name
         super().__init__(name, states)
         self.event_handlers = event_handlers
         self.init = init
         self.exit = exit
-        for state in self.states:
-            state.parent = self
         for event_handler in self.event_handlers:
             event_handler.state = self
         for transition in self.transitions:
@@ -114,10 +129,10 @@ class State(StateBase):
     @property
     def path(self):
         elements = [self.name]
-        parent = self.parent
-        while parent is not None:
-            elements.append(parent.name)
-            parent = parent.parent
+        state = self
+        while not state.is_root:
+            elements.append(state.parent.name)
+            state = state.parent
         return '/' + '/'.join(reversed(elements))
 
     @property
@@ -126,6 +141,23 @@ class State(StateBase):
         for event_handler in self.event_handlers:
             transitions.extend(event_handler.transitions)
         return transitions
+
+    @property
+    def is_root(self):
+        return isinstance(self.parent, StateChart)
+
+    @property
+    def is_initial(self):
+        return self.parent.states[0] is self
+
+    @property
+    def initial(self):
+        assert not self.is_atomic
+        return self.states[0]
+
+    @property
+    def is_atomic(self):
+        return len(self.states) == 0
 
     def _validate_event_names(self):
         event_names = [
@@ -167,7 +199,7 @@ class Transition(object):
                     self.target, self.state.name))
 
         if self.target.startswith('..'):
-            if self.state.parent is None:
+            if self.state.is_root:
                 raise_invalid()
             elements = self.state.parent.path.lstrip('/').split('/')
             target_elements = self.target.split('/')
@@ -178,7 +210,7 @@ class Transition(object):
                 raise_invalid()
             return '/' + '/'.join(elements[:-i] + target_elements[i:])
 
-        prefix_path = self.state.parent.path if self.state.parent else '/'
+        prefix_path = self.state.parent.path if not self.state.is_root else '/'
         return join(prefix_path, self.target)
 
     def has_else_guard(self):
