@@ -313,7 +313,7 @@ off
 
 on
   TIMEOUT -> off
-''', ['/', '/on', '/off']),
+''', ['/on', '/off']),
                       ('''
 off
   BUTTON_PRESS -> on
@@ -326,7 +326,7 @@ off
 on
   TIMEOUT -> off
 ''', [
-                          '/', '/on', '/off', '/off/not_really_off',
+                          '/on', '/off', '/off/not_really_off',
                           '/off/not_really_off/what', '/off/really_off'
                       ])]
 

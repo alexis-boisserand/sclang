@@ -45,68 +45,16 @@ def resolve(abs_path):
 
 
 class StateBase(object):
-    def __init__(self,
-                 name,
-                 event_handlers=[],
-                 states=[],
-                 init=None,
-                 exit=None):
+    def __init__(self, name, states=[]):
         self.name = name
-        self.event_handlers = event_handlers
         self.states = states
-        self.init = init
-        self.exit = exit
-        self._validate_event_names()
         self._validate_states_names()
         for state in self.states:
             state.parent = self
-        for event_handler in self.event_handlers:
-            event_handler.state = self
-        for transition in self.transitions:
-            transition.state = self
-
-    @property
-    def initial(self):
-        assert self.parent and len(self.parent.states) > 0
-        return self.parent is None or self.parent.states[0] is self
-
-    @property
-    def atomic(self):
-        return len(self.states) == 0
 
     @property
     def path(self):
-        elements = [self.name]
-        parent = self.parent
-        while parent.parent is not None:
-            elements.append(parent.name)
-            parent = parent.parent
-        return '/' + '/'.join(reversed(elements))
-
-    @property
-    def transitions(self):
-        transitions = []
-        for event_handler in self.event_handlers:
-            transitions.extend(event_handler.transitions)
-        return transitions
-
-    @property
-    def state_paths(self):
-        paths = OrderedDict()
-        paths[self.name] = self
-        for state in self.states:
-            for path_, substate in state.state_paths.items():
-                new_path = join(self.name, path_)
-                paths[new_path] = substate
-        return paths
-
-    def _validate_event_names(self):
-        event_names = [
-            event_handler.event for event_handler in self.event_handlers
-        ]
-        if not unique(event_names):
-            raise DefinitionError(
-                'event handler not unique in state "{}"'.format(self.name))
+        raise NotImplementedError
 
     def _validate_states_names(self):
         if not unique([state.name for state in self.states]):
@@ -115,8 +63,8 @@ class StateBase(object):
 
 
 class StateChart(StateBase):
-    def __init__(self, event_handlers=[], states=[], init=None, exit=None):
-        super().__init__('/', event_handlers, states, init, exit)
+    def __init__(self, states=[]):
+        super().__init__('/', states)
         self.parent = None
         self._validate_transitions_targets()
         self._validate_states_are_reachable()
@@ -126,16 +74,30 @@ class StateChart(StateBase):
         return self.name
 
     @property
+    def state_paths(self):
+        def _state_paths(state):
+            paths = OrderedDict()
+            if state.name != '/':
+                paths[state.name] = state
+            for state_ in state.states:
+                for path_, substate in _state_paths(state_).items():
+                    new_path = join(state.name, path_)
+                    paths[new_path] = substate
+            return paths
+
+        return _state_paths(self)
+
+    @property
     def event_names(self):
-        def event_names_(state):
+        def _event_names(state):
             events = set()
             for substate in state.states:
                 for event_handler in substate.event_handlers:
                     events.add(event_handler.event)
-                events.update(event_names_(substate))
+                events.update(_event_names(substate))
             return events
 
-        return event_names_(self)
+        return _event_names(self)
 
     def _validate_transitions_targets(self):
         state_paths = self.state_paths
@@ -147,7 +109,6 @@ class StateChart(StateBase):
                             transition.target, state.name))
 
     def _validate_states_are_reachable(self):
-
         for dest in self.states[1:]:
             target_names = []
             for src in self.states:
@@ -168,7 +129,39 @@ class State(StateBase):
                  init=None,
                  exit=None):
         assert name
-        super().__init__(name, event_handlers, states, init, exit)
+        super().__init__(name, states)
+        self.event_handlers = event_handlers
+        self.init = init
+        self.exit = exit
+        self._validate_event_names()
+        for event_handler in self.event_handlers:
+            event_handler.state = self
+        for transition in self.transitions:
+            transition.state = self
+
+    @property
+    def path(self):
+        elements = [self.name]
+        parent = self.parent
+        while parent.parent is not None:
+            elements.append(parent.name)
+            parent = parent.parent
+        return '/' + '/'.join(reversed(elements))
+
+    @property
+    def transitions(self):
+        transitions = []
+        for event_handler in self.event_handlers:
+            transitions.extend(event_handler.transitions)
+        return transitions
+
+    def _validate_event_names(self):
+        event_names = [
+            event_handler.event for event_handler in self.event_handlers
+        ]
+        if not unique(event_names):
+            raise DefinitionError(
+                'event handler not unique in state "{}"'.format(self.name))
 
 
 class EventHandler(object):

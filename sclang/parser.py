@@ -79,8 +79,8 @@ class ScIndenter(Indenter):
 
 class ScTransformer(Transformer):
     @v_args(inline=True)
-    def start(self, *attribute):
-        return StateChart(**collect_attributes(attribute))
+    def start(self, *states):
+        return StateChart(states=states)
 
     @v_args(inline=True)
     def state(self, state_name, *attribute):
