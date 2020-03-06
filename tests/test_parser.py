@@ -20,7 +20,7 @@ on
 
 def test_garbage_input():
     input = '%khcvbk'
-    with pytest.raises(ParsingError):
+    with pytest.raises(ParsingError) as exc:
         parse(input)
 
 
@@ -75,8 +75,9 @@ on
 off
   TIMEOUT -> on
 '''
-    with pytest.raises(ParsingError):
+    with pytest.raises(ParsingError) as exc:
         parse(input)
+    assert 'state name not unique in state "/"' in str(exc.value)
 
 
 def test_invalid_target_name():
@@ -90,7 +91,7 @@ on
 '''
     with pytest.raises(ParsingError) as exc:
         parse(input)
-    assert 'invalid transition target' in str(exc.value)
+    assert 'invalid transition target "offf" in state "on"' in str(exc.value)
 
 
 def test_unreachable_state():
@@ -118,7 +119,7 @@ on
 '''
     with pytest.raises(ParsingError) as exc:
         parse(input)
-    assert 'event handler not unique' in str(exc.value)
+    assert 'event handler not unique in state "off"' in str(exc.value)
 
 
 def test_guard():
@@ -206,8 +207,9 @@ off
 on
   TIMEOUT -> off
 '''
-    with pytest.raises(ParsingError):
+    with pytest.raises(ParsingError) as exc:
         parse(input)
+    assert 'guard not unique for event "TIMEOUT"' in str(exc.value)
 
 
 def test_eventless():
@@ -230,8 +232,9 @@ off
 on
   TIMEOUT -> off
 '''
-    with pytest.raises(ParsingError):
+    with pytest.raises(ParsingError) as exc:
         parse(input)
+    assert 'event handler not unique in state "off"' in str(exc.value)
 
 
 def test_eventless_with_guard_not_unique():
@@ -244,8 +247,10 @@ off
 on
   TIMEOUT -> off
 '''
-    with pytest.raises(ParsingError):
+    with pytest.raises(ParsingError) as exc:
         parse(input)
+
+    assert 'guard not unique for event "None"' in str(exc.value)
 
 
 def test_mix_eventless_regular():
@@ -303,7 +308,7 @@ on
 @pytest.mark.parametrize('input, events', event_names_params)
 def test_event_names(input, events):
     sc = parse(input)
-    assert (sc.event_names == set(events))
+    assert sc.event_names == set(events)
 
 
 state_paths_params = [('''
@@ -390,9 +395,11 @@ on
   TIMEOUT ["i==3"] -> off/really_off
           [else] -> off/not_really_off/what
   what
-    _ -> ../off
+    _ -> ../on
 '''
-    parse(input)
+    sc = parse(input)
+    assert sc.states[0].states[0].transitions[
+        2].target_path == '/off/not_really_off/what'
 
 
 composite_invalid_target_path_params = [
