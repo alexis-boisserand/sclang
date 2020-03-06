@@ -1,4 +1,4 @@
-from sclang import parse, ParsingError, DefinitionError
+from sclang import parse, ParsingError
 import pytest
 
 
@@ -20,7 +20,7 @@ on
 
 def test_garbage_input():
     input = '%khcvbk'
-    with pytest.raises(ParsingError) as exc:
+    with pytest.raises(ParsingError):
         parse(input)
 
 

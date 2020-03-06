@@ -91,9 +91,9 @@ class StateChart(StateBase):
             for src in srcs:
                 for transition in src.transitions:
                     dest = state_paths[transition.target_path]
-                    if not dest in reachables:
+                    if dest not in reachables:
                         dests.append(dest)
-                if not src.is_atomic and not src.initial in reachables:
+                if not src.is_atomic and src.initial not in reachables:
                     dests.append(src.initial)
             return dests
 
