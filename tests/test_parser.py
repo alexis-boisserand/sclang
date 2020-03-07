@@ -149,8 +149,8 @@ on
     sc = parse(input)
     assert sc.states[0].event_handlers[1].transitions[0].guard == 'count == 3'
     assert sc.states[0].event_handlers[1].transitions[1].guard == 'count == 4'
-    assert not sc.states[0].event_handlers[1].transitions[1].has_else_guard()
-    assert sc.states[0].event_handlers[1].transitions[2].has_else_guard()
+    assert not sc.states[0].event_handlers[1].transitions[1].has_else_guard
+    assert sc.states[0].event_handlers[1].transitions[2].has_else_guard
 
 
 def test_only_else_guard():

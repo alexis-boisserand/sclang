@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from cached_property import cached_property
 from .error import Error
 
 
@@ -43,7 +44,7 @@ class StateChart(StateBase):
         self._validate_transitions_targets()
         self._validate_states_are_reachable()
 
-    @property
+    @cached_property
     def state_paths(self):
         def _state_paths(state):
             paths = OrderedDict()
@@ -57,7 +58,7 @@ class StateChart(StateBase):
 
         return _state_paths(self)
 
-    @property
+    @cached_property
     def event_names(self):
         def _event_names(state):
             events = set()
@@ -126,7 +127,7 @@ class State(StateBase):
             transition.state = self
         self._validate_event_names()
 
-    @property
+    @cached_property
     def path(self):
         elements = [self.name]
         state = self
@@ -135,27 +136,27 @@ class State(StateBase):
             state = state.parent
         return '/' + '/'.join(reversed(elements))
 
-    @property
+    @cached_property
     def transitions(self):
         transitions = []
         for event_handler in self.event_handlers:
             transitions.extend(event_handler.transitions)
         return transitions
 
-    @property
+    @cached_property
     def is_root(self):
         return isinstance(self.parent, StateChart)
 
-    @property
+    @cached_property
     def is_initial(self):
         return self.parent.states[0] is self
 
-    @property
+    @cached_property
     def initial(self):
         assert not self.is_atomic
         return self.states[0]
 
-    @property
+    @cached_property
     def is_atomic(self):
         return len(self.states) == 0
 
@@ -191,7 +192,7 @@ class Transition(object):
         self.guard = guard
         self.action = action
 
-    @property
+    @cached_property
     def target_path(self):
         def raise_invalid():
             raise DefinitionError(
@@ -213,5 +214,6 @@ class Transition(object):
         prefix_path = self.state.parent.path if not self.state.is_root else '/'
         return join(prefix_path, self.target)
 
+    @cached_property
     def has_else_guard(self):
         return self.guard is Transition.else_guard
