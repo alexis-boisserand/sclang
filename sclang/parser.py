@@ -5,35 +5,41 @@ from .state_chart import Transition, EventHandler, State, StateChart
 from .error import Error
 
 sc_grammar = r'''
-    start: (_NEWLINE? state)+
-    state: state_name _NEWLINE [_INDENT attribute* _DEDENT]
-    attribute: state | init | exit | event_handler
-    init: "@init" action _NEWLINE
-    exit: "@exit" action _NEWLINE
-    event_handler: eventless_handler | regular_event_handler
-
-    regular_event_handler: event transitions
-    eventless_handler: "_" transitions
-    transitions: unguarded_transition | guarded_transitions
-
-    unguarded_transition: target
-    guarded_transitions: guarded_transition [_INDENT (guarded_transition)* else_transition? _DEDENT]
-    guarded_transition: "[" guard "]" target
-    else_transition: "[" "else" "]" target
-    target: "->" STATE_PATH action? _NEWLINE
-
-    event: NAME
-    state_name: NAME
-    guard: STRING
-    action: STRING
-
     %import common.WS_INLINE
     %import common.ESCAPED_STRING -> STRING
     %declare _INDENT _DEDENT
     %ignore WS_INLINE
 
+    start: (_NEWLINE? state)+
+    state: NAME _NEWLINE [_INDENT attribute* _DEDENT]
+    attribute: state
+             | init
+             | exit
+             | event_handler
+
+    init: "@init" code _NEWLINE
+    exit: "@exit" code _NEWLINE
+    event_handler: eventless_handler
+                 | regular_event_handler
+
+    regular_event_handler: NAME transitions
+    eventless_handler: "_" transitions
+    transitions: unguarded_transition
+               | guarded_transitions
+
+    unguarded_transition: target
+    guarded_transitions: guarded_transition [_INDENT (guarded_transition)* else_transition? _DEDENT]
+    guarded_transition: "[" code "]" target
+    else_transition: "[" "else" "]" target
+    target: "->" STATE_PATH code? _NEWLINE
+
+    code: STRING
+
     STATE_PATH: ("../")* (NAME"/")* NAME
-    NAME: LOWER_CASE | CAMEL_CASE | UPPER_CASE | LOWER_CAMEL_CASE
+    NAME: LOWER_CASE
+        | CAMEL_CASE
+        | UPPER_CASE
+        | LOWER_CAMEL_CASE
     LOWER_CASE: /([a-z]+_?)*[a-z]/
     UPPER_CASE: /([A-Z]+_?)*[A-Z]/
     CAMEL_CASE: /([A-Z][a-z]+)+/
@@ -126,8 +132,8 @@ class ScTransformer(Transformer):
         return Transition(**target)
 
     @v_args(inline=True)
-    def guarded_transition(self, guard, target):
-        target['guard'] = guard
+    def guarded_transition(self, code, target):
+        target['guard'] = code
         return Transition(**target)
 
     @v_args(inline=True)
@@ -147,14 +153,8 @@ class ScTransformer(Transformer):
         return str(name)
 
     @v_args(inline=True)
-    def escaped_string(self, name):
-        return str(name).strip('"')
-
-    event = string_
-    state_path = string_
-    state_name = string_
-    guard = escaped_string
-    action = escaped_string
+    def code(self, code_):
+        return str(code_).strip('"')
 
 
 def parse(input_):
