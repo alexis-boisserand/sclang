@@ -5,7 +5,7 @@ from .state_chart import Transition, EventHandler, State, StateChart
 from .error import Error
 
 sc_grammar = r'''
-    start: (_NEWLINE* state)+
+    start: (_NEWLINE? state)+
     state: state_name _NEWLINE [_INDENT attribute* _DEDENT]
     attribute: state | init | exit | event_handler
     init: "@init" action _NEWLINE
@@ -160,7 +160,10 @@ class ScTransformer(Transformer):
 def parse(input_):
     try:
         parser = Lark(sc_grammar, parser='lalr', postlex=ScIndenter())
-        tree = parser.parse(input_)
+        # all rules expect a newline at the end
+        # we just automatically add one at the end of the input
+        # in case the user hasn't added it
+        tree = parser.parse(input_ + '\n')
         return ScTransformer().transform(tree)
     except LarkError as exc:
         raise ParsingError from exc
