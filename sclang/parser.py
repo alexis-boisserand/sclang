@@ -5,11 +5,11 @@ from .state_chart import Transition, EventHandler, State, StateChart
 from .error import Error
 
 sc_grammar = r'''
-    start: (_NL* state)+
-    state: state_name _NL [_INDENT attribute* _DEDENT]
-    attribute: event_handler | init | exit | state
-    init: "@init" action _NL
-    exit: "@exit" action _NL
+    start: (_NEWLINE* state)+
+    state: state_name _NEWLINE [_INDENT attribute* _DEDENT]
+    attribute: state | init | exit | event_handler
+    init: "@init" action _NEWLINE
+    exit: "@exit" action _NEWLINE
     event_handler: eventless_handler | regular_event_handler
 
     regular_event_handler: event transitions
@@ -20,7 +20,7 @@ sc_grammar = r'''
     guarded_transitions: guarded_transition [_INDENT (guarded_transition)* else_transition? _DEDENT]
     guarded_transition: "[" guard "]" target
     else_transition: "[" "else" "]" target
-    target: "->" STATE_PATH (action)? _NL
+    target: "->" STATE_PATH action? _NEWLINE
 
     event: NAME
     state_name: NAME
@@ -33,12 +33,12 @@ sc_grammar = r'''
     %ignore WS_INLINE
 
     STATE_PATH: ("../")* (NAME"/")* NAME
-    NAME: LOWER_CASE | UPPER_CASE | CAMEL_CASE | LOWER_CAMEL_CASE
+    NAME: LOWER_CASE | CAMEL_CASE | UPPER_CASE | LOWER_CAMEL_CASE
     LOWER_CASE: /([a-z]+_?)*[a-z]/
     UPPER_CASE: /([A-Z]+_?)*[A-Z]/
-    CAMEL_CASE: /[A-Z][a-zA-Z]*/
-    LOWER_CAMEL_CASE: /[a-z][a-zA-Z]*/
-    _NL: /(\r?\n[\t ]*)+/
+    CAMEL_CASE: /([A-Z][a-z]+)+/
+    LOWER_CAMEL_CASE: /([a-z]+[A-Z][a-z]+)+/
+    _NEWLINE: /(\r?\n[\t ]*)+/
 '''
 
 
@@ -69,7 +69,7 @@ class ParsingError(Error):
 
 
 class ScIndenter(Indenter):
-    NL_type = '_NL'
+    NL_type = '_NEWLINE'
     OPEN_PAREN_types = []
     CLOSE_PAREN_types = []
     INDENT_type = '_INDENT'

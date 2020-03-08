@@ -19,9 +19,7 @@ def graph(state_chart):
 def main():
     parser = argparse.ArgumentParser(
         description='Generates the statechart representation.')
-    parser.add_argument('-sc',
-                        '--state_chart',
-                        required=True,
+    parser.add_argument('state_chart',
                         type=argparse.FileType('r'),
                         help='statechart declaration file')
     args = parser.parse_args()
@@ -29,6 +27,10 @@ def main():
     try:
         with args.state_chart:
             state_chart = parse(args.state_chart.read())
+            for k, v in state_chart.state_paths.items():
+                print(k, v.name)
+                for transition in v.transitions:
+                    print(transition.target)
     except ParsingError as exc:
         print('Failed to load {}: {}'.format(args.state_chart.name, str(exc)))
         sys.exit(1)

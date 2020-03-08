@@ -3,8 +3,8 @@ from enum import Enum
 
 lower_case_reg = re.compile(r'([a-z]+_?)*[a-z]')
 upper_case_reg = re.compile(r'([A-Z]+_?)*[A-Z]')
-camel_case_reg = re.compile(r'[A-Z][a-zA-Z]*')
-lower_camel_case_reg = re.compile(r'[a-z][a-zA-Z]*')
+camel_case_reg = re.compile(r'([A-Z][a-z]+)+')
+lower_camel_case_reg = re.compile(r'([a-z]+[A-Z][a-z]+)+')
 
 
 class AutoNumber(Enum):
