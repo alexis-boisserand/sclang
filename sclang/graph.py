@@ -27,10 +27,6 @@ def main():
     try:
         with args.state_chart:
             state_chart = parse(args.state_chart.read())
-            for k, v in state_chart.state_paths.items():
-                print(k, v.name)
-                for transition in v.transitions:
-                    print(transition.target)
     except ParsingError as exc:
         print('Failed to load {}: {}'.format(args.state_chart.name, str(exc)))
         sys.exit(1)
