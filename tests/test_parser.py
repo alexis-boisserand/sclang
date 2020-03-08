@@ -318,7 +318,7 @@ off
 
 on
   TIMEOUT -> off
-''', ['/on', '/off']),
+''', ['/off', '/on']),
                       ('''
 off
   BUTTON_PRESS -> on
@@ -331,15 +331,32 @@ off
 on
   TIMEOUT -> off
 ''', [
-                          '/on', '/off', '/off/not_really_off',
-                          '/off/not_really_off/what', '/off/really_off'
+                          '/off', '/off/not_really_off',
+                          '/off/not_really_off/what', '/off/really_off', '/on'
                       ])]
 
 
 @pytest.mark.parametrize('input, state_paths', state_paths_params)
 def test_state_paths(input, state_paths):
     sc = parse(input)
-    assert set(sc.state_paths.keys()) == set(state_paths)
+    assert list(sc.state_paths.keys()) == state_paths
+
+
+def test_all_states():
+    input = '''
+off
+  BUTTON_PRESS -> on
+  TIMEOUT -> off
+  not_really_off
+    SOME_EVENT -> really_off
+    what
+  really_off
+    OTHER_EVENT -> not_really_off
+on
+  TIMEOUT -> off
+'''
+    sc = parse(input)
+    assert sc.all_states == list(sc.state_paths.values())
 
 
 def test_path():

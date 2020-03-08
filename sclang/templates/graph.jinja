@@ -6,7 +6,7 @@
 {%- if event_handler.event is not none %}
 {{ event_handler.event }}
 {%- endif %}
-{%- if transition.has_else_guard() %}
+{%- if transition.has_else_guard %}
 [else]
 {%- elif transition.guard is not none %}
 [{{ transition.guard }}]
@@ -15,6 +15,22 @@
 / {{ transition.action }}
 {% endif %}
 {% endif %}
+{% endmacro -%}
+
+{% macro make_state(state) %}
+{% if state.states %}
+[*] -> {{ state.states[0].name }}
+{% endif %}
+{% for substate in state.states %}
+{% for event_handler in substate.event_handlers %}
+{% for transition in event_handler.transitions %}
+{{ substate.name }} -> {{ transition.target }}{{ make_event_label(event_handler, transition) }}
+{% endfor %}
+{% endfor %}
+state {{ substate.name }} {
+    {{ make_state(substate) }}
+}
+{% endfor %}
 {% endmacro -%}
 
 @startuml
@@ -31,14 +47,5 @@ skinparam state {
   FontColor #3e3c49
   FontStyle Bold
 }
-{% if state_chart.states %}
-[*] -> {{ state_chart.states[0].name }}
-{% endif %}
-{% for state in state_chart.states %}
-{% for event_handler in state.event_handlers %}
-{% for transition in event_handler.transitions %}
-{{ state.name }} -> {{ transition.target }}{{ make_event_label(event_handler, transition) }}
-{% endfor %}
-{% endfor %}
-{% endfor %}
+{{ make_state(state_chart) }}
 @enduml

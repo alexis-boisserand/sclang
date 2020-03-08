@@ -32,7 +32,6 @@ sc_grammar = r'''
     guarded_transition: "[" code "]" target
     else_transition: "[" "else" "]" target
     target: "->" STATE_PATH code? _NEWLINE
-
     code: STRING
 
     STATE_PATH: ("../")* (NAME"/")* NAME

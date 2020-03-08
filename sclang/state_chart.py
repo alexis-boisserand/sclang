@@ -59,6 +59,17 @@ class StateChart(StateBase):
         return _state_paths(self)
 
     @cached_property
+    def all_states(self):
+        def _all_states(state):
+            states = []
+            for state_ in state.states:
+                states.append(state_)
+                states.extend(_all_states(state_))
+            return states
+
+        return _all_states(self)
+
+    @cached_property
     def event_names(self):
         def _event_names(state):
             events = set()
