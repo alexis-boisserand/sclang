@@ -21,6 +21,12 @@
 {% if state.states %}
 [*] --> {{ state.states[0].unique_name }}
 {% endif %}
+{% if state.init %}
+{{ state.unique_name }} : entry / {{ state.init }}
+{% endif %}
+{% if state.exit %}
+{{ state.unique_name }} : entry / {{ state.exit }}
+{% endif %}
 {% for substate in state.states %}
 state {{ substate.unique_name }} {
     {{ make_state(substate) }}
@@ -38,10 +44,11 @@ hide empty description
 skinparam ArrowFontColor #ba4452
 skinparam ArrowFontStyle Bold
 skinparam BackgroundColor White
+skinparam shadowing false
 
 skinparam state {
   StartColor #3e3c49
-  BackgroundColor #a7b38d
+  BackgroundColor White
   BorderColor #3e3c49
   ArrowColor #3e3c49
   FontColor #3e3c49
