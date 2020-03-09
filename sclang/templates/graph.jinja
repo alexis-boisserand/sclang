@@ -10,37 +10,37 @@
 [else]
 {%- elif transition.guard is not none %}
 [{{ transition.guard }}]
-{% endif %}
+{%- endif %}
 {%- if transition.action is not none %}
-/ {{ transition.action }}
+ / {{ transition.action }}
 {% endif %}
 {% endif %}
 {% endmacro -%}
 
 {% macro make_state(state) %}
 {% if state.states %}
-[*] -> {{ state.states[0].name }}
+[*] --> {{ state.states[0].unique_name }}
 {% endif %}
 {% for substate in state.states %}
-{% for event_handler in substate.event_handlers %}
-{% for transition in event_handler.transitions %}
-{{ substate.name }} -> {{ transition.target }}{{ make_event_label(event_handler, transition) }}
-{% endfor %}
-{% endfor %}
-state {{ substate.name }} {
+state {{ substate.unique_name }} {
     {{ make_state(substate) }}
 }
+{% for event_handler in substate.event_handlers %}
+{% for transition in event_handler.transitions %}
+{{ substate.unique_name }} --> {{ state_chart.state_paths[transition.target_path].unique_name }}{{ make_event_label(event_handler, transition) }}
+{% endfor %}
+{% endfor %}
 {% endfor %}
 {% endmacro -%}
 
 @startuml
+hide empty description
 skinparam ArrowFontColor #ba4452
 skinparam ArrowFontStyle Bold
 skinparam BackgroundColor White
 
 skinparam state {
   StartColor #3e3c49
-  EndColor Red
   BackgroundColor #a7b38d
   BorderColor #3e3c49
   ArrowColor #3e3c49

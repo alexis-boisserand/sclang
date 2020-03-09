@@ -11,7 +11,7 @@ sc_grammar = r'''
     %ignore WS_INLINE
 
     start: (_NEWLINE? state)+
-    state: NAME _NEWLINE [_INDENT attribute* _DEDENT]
+    state: state_name _NEWLINE [_INDENT attribute* _DEDENT]
     attribute: state
              | init
              | exit
@@ -22,7 +22,7 @@ sc_grammar = r'''
     event_handler: eventless_handler
                  | regular_event_handler
 
-    regular_event_handler: NAME transitions
+    regular_event_handler: event_name transitions
     eventless_handler: "_" transitions
     transitions: unguarded_transition
                | guarded_transitions
@@ -31,8 +31,11 @@ sc_grammar = r'''
     guarded_transitions: guarded_transition [_INDENT (guarded_transition)* else_transition? _DEDENT]
     guarded_transition: "[" code "]" target
     else_transition: "[" "else" "]" target
-    target: "->" STATE_PATH code? _NEWLINE
+    target: "->" state_path code? _NEWLINE
     code: STRING
+    state_name: NAME
+    event_name: NAME
+    state_path: STATE_PATH
 
     STATE_PATH: ("../")* (NAME"/")* NAME
     NAME: LOWER_CASE
@@ -154,6 +157,10 @@ class ScTransformer(Transformer):
     @v_args(inline=True)
     def code(self, code_):
         return str(code_).strip('"')
+
+    state_name = string_
+    event_name = string_
+    state_path = string_
 
 
 def parse(input_):
