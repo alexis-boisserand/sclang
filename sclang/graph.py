@@ -24,6 +24,7 @@ def add_unique_name_attr(state_chart):
 
 
 def graph(state_chart):
+    add_unique_name_attr(state_chart)
     env = Environment(loader=FileSystemLoader(template_dir),
                       trim_blocks=True,
                       lstrip_blocks=True)
@@ -51,8 +52,6 @@ def main():
     except ParsingError as exc:
         print('Failed to load {}: {}'.format(args.state_chart.name, str(exc)))
         sys.exit(1)
-
-    add_unique_name_attr(state_chart)
 
     if args.output:
         output = args.output
