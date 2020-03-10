@@ -14,21 +14,21 @@ sc_grammar = r'''
     start: (_NEWLINE? state)+
     state: state_name _NEWLINE [_INDENT init? exit? event_handler* state* _DEDENT]
 
-    init: "@init" action _NEWLINE
-    exit: "@exit" action _NEWLINE
-    event_handler: eventless_handler
-                 | regular_event_handler
+    init: "#init" _NEWLINE [actions]
+    exit: "#exit" _NEWLINE [actions]
+    event_handler: unguarded_event_handler
+                 | guarded_event_handler
 
-    regular_event_handler: event_name transitions
-    eventless_handler: "_" transitions
-    transitions: unguarded_transition
-               | guarded_transitions
+    unguarded_event_handler: event target
+    guarded_event_handler: event _NEWLINE _INDENT guarded_transition+ else_transition? _DEDENT
 
-    unguarded_transition: target
-    guarded_transitions: guarded_transition [_INDENT (guarded_transition)* else_transition? _DEDENT]
     guarded_transition: "[" guard "]" target
     else_transition: "[" "else" "]" target
-    target: "->" state_path action? _NEWLINE
+
+    target: "->" state_path _NEWLINE [actions]
+    actions: _INDENT (action _NEWLINE)+ _DEDENT
+    event: "@" event_name?
+
     action: STRING
     guard: STRING
     state_name: NAME
@@ -61,6 +61,7 @@ def collect_attributes(attributes):
         elif isinstance(attr, State):
             states.append(attr)
         else:
+            print(type(attr), attr)
             assert False
     dict_['event_handlers'] = event_handlers
     dict_['states'] = states
@@ -94,43 +95,24 @@ class ScTransformer(Transformer):
         return State(state_name, **collect_attributes(attributes))
 
     @v_args(inline=True)
-    def attribute(self, attr):
-        return attr
+    def init(self, *actions):
+        return dict(init_actions=actions)
 
     @v_args(inline=True)
-    def init(self, action):
-        return dict(init=action)
-
-    @v_args(inline=True)
-    def exit(self, action):
-        return dict(exit=action)
+    def exit(self, *actions):
+        return dict(exit_actions=actions)
 
     @v_args(inline=True)
     def event_handler(self, handler):
         return handler
 
     @v_args(inline=True)
-    def regular_event_handler(self, event, transitions):
+    def unguarded_event_handler(self, event, target):
+        return EventHandler(event, transitions=[Transition(**target)])
+
+    @v_args(inline=True)
+    def guarded_event_handler(self, event, *transitions):
         return EventHandler(event, transitions=transitions)
-
-    @v_args(inline=True)
-    def eventless_handler(self, transitions):
-        return EventHandler(None, transitions=transitions)
-
-    @v_args(inline=True)
-    def transitions(self, transitions):
-        if isinstance(transitions, list):
-            return transitions
-        if isinstance(transitions, Transition):
-            return [transitions]
-        assert False
-
-    def guarded_transitions(self, transitions):
-        return transitions
-
-    @v_args(inline=True)
-    def unguarded_transition(self, target):
-        return Transition(**target)
 
     @v_args(inline=True)
     def guarded_transition(self, guard, target):
@@ -142,12 +124,20 @@ class ScTransformer(Transformer):
         target['guard'] = Transition.else_guard
         return Transition(**target)
 
-    def target(self, children):
+    @v_args(inline=True)
+    def target(self, state_path, *actions):
+        return dict(target=state_path, actions=actions[0] if actions else [])
+
+    def event(self, children):
         if len(children) == 1:
-            return dict(target=children[0])
-        if len(children) == 2:
-            return dict(target=children[0], action=children[1])
+            return children[0]
+        if len(children) == 0:
+            return None
         assert False
+
+    @v_args(inline=True)
+    def actions(self, *actions):
+        return list(actions)
 
     @v_args(inline=True)
     def string_(self, name):

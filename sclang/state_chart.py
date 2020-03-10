@@ -126,12 +126,12 @@ class State(StateBase):
                  name,
                  event_handlers=[],
                  states=[],
-                 init=None,
-                 exit=None):
+                 init_actions=[],
+                 exit_actions=[]):
         super().__init__(name, states)
         self.event_handlers = event_handlers
-        self.init = init
-        self.exit = exit
+        self.init_actions = init_actions
+        self.exit_actions = exit_actions
         for event_handler in self.event_handlers:
             event_handler.state = self
         for transition in self.transitions:
@@ -198,10 +198,10 @@ class EventHandler(object):
 class Transition(object):
     else_guard = object()
 
-    def __init__(self, target, guard=None, action=None):
+    def __init__(self, target, guard=None, actions=[]):
         self.target = target
         self.guard = guard
-        self.action = action
+        self.actions = actions
 
     @cached_property
     def target_path(self):

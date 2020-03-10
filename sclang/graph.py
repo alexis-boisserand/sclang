@@ -62,7 +62,6 @@ def main():
         base = os.path.splitext(os.path.basename(args.state_chart.name))[0]
         output_name = base + '.png'
         output = open(output_name, 'wb')
-
     with output:
         output.write(graph(state_chart))
 

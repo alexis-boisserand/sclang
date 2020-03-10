@@ -199,13 +199,14 @@ on
 def test_guard_not_unique():
     input = '''
 off
-  BUTTON_PRESS -> on
-  TIMEOUT ["count == 3"] -> off
-          ["count == 3"] -> on
-          [else] -> off
+  @BUTTON_PRESS -> on
+  @TIMEOUT
+    ["count == 3"] -> off
+    ["count == 3"] -> on
+    [else] -> off
 
 on
-  TIMEOUT -> off
+  @TIMEOUT -> off
 '''
     with pytest.raises(ParsingError) as exc:
         parse(input)
@@ -215,10 +216,10 @@ on
 def test_eventless():
     input = '''
 off
-  _ -> on
+  @ -> on
 
 on
-  TIMEOUT -> off
+  @TIMEOUT -> off
 '''
     parse(input)
 
@@ -226,11 +227,11 @@ on
 def test_eventless_not_unique():
     input = '''
 off
-  _ -> on
-  _ -> off
+  @ -> on
+  @ -> off
 
 on
-  TIMEOUT -> off
+  @TIMEOUT -> off
 '''
     with pytest.raises(ParsingError) as exc:
         parse(input)
@@ -240,12 +241,13 @@ on
 def test_eventless_with_guard_not_unique():
     input = '''
 off
-  _ ["count == 3"] -> on
+  @
+    ["count == 3"] -> on
     ["count == 4"] -> off
     ["count == 4"] -> on
 
 on
-  TIMEOUT -> off
+  @TIMEOUT -> off
 '''
     with pytest.raises(ParsingError) as exc:
         parse(input)

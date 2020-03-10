@@ -1,7 +1,7 @@
 {% macro make_event_label(event_handler, transition) %}
 {% if event_handler.event is not none 
    or transition.guard is not none
-   or transition.action is not none %}
+   or transition.actions %}
 :
 {%- if event_handler.event is not none %}
 {{ event_handler.event }}
@@ -11,8 +11,8 @@
 {%- elif transition.guard is not none %}
 [{{ transition.guard }}]
 {%- endif %}
-{%- if transition.action is not none %}
- / {{ transition.action }}
+{%- if transition.actions %}
+ / "{{ transition.actions|join('\\n') }}"
 {% endif %}
 {% endif %}
 {% endmacro -%}
@@ -21,11 +21,11 @@
 {% if state.states %}
 [*] --> {{ state.states[0].unique_name }}
 {% endif %}
-{% if state.init %}
-{{ state.unique_name }} : entry / {{ state.init }}
+{% if state.init_actions %}
+{{ state.unique_name }} : entry / {{ state.init_actions|join('\\n') }}
 {% endif %}
-{% if state.exit %}
-{{ state.unique_name }} : entry / {{ state.exit }}
+{% if state.exit_actions %}
+{{ state.unique_name }} : entry / {{ state.exit_actions|join('\\n') }}
 {% endif %}
 {% for substate in state.states %}
 state {{ substate.unique_name }} {
