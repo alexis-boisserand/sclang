@@ -43,7 +43,10 @@ def main():
     parser.add_argument('state_chart',
                         type=argparse.FileType('r'),
                         help='statechart declaration file')
-    parser.add_argument('-o', '--output',type=argparse.FileType('wb'), help='output file name')
+    parser.add_argument('-o',
+                        '--output',
+                        type=argparse.FileType('wb'),
+                        help='output file name')
     args = parser.parse_args()
 
     try:

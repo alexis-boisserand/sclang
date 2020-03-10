@@ -9,6 +9,7 @@ sc_grammar = r'''
     %import common.ESCAPED_STRING -> STRING
     %declare _INDENT _DEDENT
     %ignore WS_INLINE
+    %ignore COMMENT
 
     start: (_NEWLINE? state)+
     state: state_name _NEWLINE [_INDENT attribute* _DEDENT]
@@ -37,6 +38,7 @@ sc_grammar = r'''
     event_name: NAME
     state_path: STATE_PATH
 
+    COMMENT: _NEWLINE? /\/\/.*/
     STATE_PATH: ("../")* (NAME"/")* NAME
     NAME: LOWER_CASE
         | CAMEL_CASE

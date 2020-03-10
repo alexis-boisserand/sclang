@@ -579,3 +579,26 @@ on
     _ -> ../off/really_off
 '''
     parse(input)
+
+
+def test_comments():
+    input = '''
+// comment 1
+off
+  BUTTON_PRESS -> on // comment 2
+  TIMEOUT -> off
+    // comment 3
+  not_really_off
+  // comment 4
+    SOME_EVENT -> ../off
+    THIRD_EVENT -> not_really_off/what // comment 5
+    what
+  really_off
+    OTHER_EVENT -> ../on/what
+on
+  TIMEOUT ["i==3"] -> on/what
+          [else] -> off/not_really_off/what
+  what
+    _ -> ../off/really_off
+'''
+    parse(input)
