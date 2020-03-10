@@ -271,17 +271,24 @@ def test_actions():
 off
   @init "doSomething()"
   TIMEOUT ["count == 3"] -> on
-  _ ["count == 6"] -> on "set(6)"
+  _ ["count == 6"] -> on "set(6)" 
     ["count == 4"] -> off
+  yes
+    @init "start()"
+    @exit "stop()"
+    _ -> other
+  other
 
 on
   @exit "doSomethingElse()"
   TIMEOUT -> off
 '''
     sc = parse(input)
-    sc.states[0].init = "doSomething()"
-    sc.states[0].event_handlers[1].transitions[0] = "set(6)"
-    sc.states[1].init = "doSomethingElse()"
+    assert sc.states[0].init == "doSomething()"
+    assert sc.states[0].event_handlers[1].transitions[0].action == "set(6)"
+    assert sc.states[1].exit == "doSomethingElse()"
+    assert sc.states[0].states[0].init == "start()"
+    assert sc.states[0].states[0].exit == "stop()"
 
 
 event_names_params = [('''
@@ -600,5 +607,8 @@ on
           [else] -> off/not_really_off/what
   what
     _ -> ../off/really_off
+
+ // comment 6
+// comment 7
 '''
     parse(input)

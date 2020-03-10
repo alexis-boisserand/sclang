@@ -12,14 +12,10 @@ sc_grammar = r'''
     %ignore COMMENT
 
     start: (_NEWLINE? state)+
-    state: state_name _NEWLINE [_INDENT attribute* _DEDENT]
-    attribute: state
-             | init
-             | exit
-             | event_handler
+    state: state_name _NEWLINE [_INDENT init? exit? event_handler* state* _DEDENT]
 
-    init: "@init" code _NEWLINE
-    exit: "@exit" code _NEWLINE
+    init: "@init" action _NEWLINE
+    exit: "@exit" action _NEWLINE
     event_handler: eventless_handler
                  | regular_event_handler
 
@@ -30,10 +26,11 @@ sc_grammar = r'''
 
     unguarded_transition: target
     guarded_transitions: guarded_transition [_INDENT (guarded_transition)* else_transition? _DEDENT]
-    guarded_transition: "[" code "]" target
+    guarded_transition: "[" guard "]" target
     else_transition: "[" "else" "]" target
-    target: "->" state_path code? _NEWLINE
-    code: STRING
+    target: "->" state_path action? _NEWLINE
+    action: STRING
+    guard: STRING
     state_name: NAME
     event_name: NAME
     state_path: STATE_PATH
@@ -93,8 +90,8 @@ class ScTransformer(Transformer):
         return StateChart(states=states)
 
     @v_args(inline=True)
-    def state(self, state_name, *attribute):
-        return State(state_name, **collect_attributes(attribute))
+    def state(self, state_name, *attributes):
+        return State(state_name, **collect_attributes(attributes))
 
     @v_args(inline=True)
     def attribute(self, attr):
@@ -136,8 +133,8 @@ class ScTransformer(Transformer):
         return Transition(**target)
 
     @v_args(inline=True)
-    def guarded_transition(self, code, target):
-        target['guard'] = code
+    def guarded_transition(self, guard, target):
+        target['guard'] = guard
         return Transition(**target)
 
     @v_args(inline=True)
@@ -157,9 +154,11 @@ class ScTransformer(Transformer):
         return str(name)
 
     @v_args(inline=True)
-    def code(self, code_):
-        return str(code_).strip('"')
+    def escaped_string(self, str_):
+        return str(str_).strip('"')
 
+    action = escaped_string
+    guard = escaped_string
     state_name = string_
     event_name = string_
     state_path = string_
