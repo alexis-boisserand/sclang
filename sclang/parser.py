@@ -4,50 +4,6 @@ from lark.exceptions import LarkError
 from .state_chart import Transition, EventHandler, State, StateChart
 from .error import Error
 
-sc_grammar = r'''
-    %import common.WS_INLINE
-    %import common.ESCAPED_STRING -> STRING
-    %declare _INDENT _DEDENT
-    %ignore WS_INLINE
-    %ignore COMMENT
-
-    start: (_NEWLINE? state)+
-    state: state_name _NEWLINE [_INDENT init? exit? event_handler* state* _DEDENT]
-
-    init: "#init" _NEWLINE actions
-    exit: "#exit" _NEWLINE actions
-    event_handler: unguarded_event_handler
-                 | guarded_event_handler
-
-    unguarded_event_handler: event target
-    guarded_event_handler: event _NEWLINE _INDENT guarded_transition+ else_transition? _DEDENT
-
-    guarded_transition: "[" guard "]" target
-    else_transition: "[" "else" "]" target
-
-    target: "->" state_path _NEWLINE [actions]
-    actions: _INDENT (action _NEWLINE)+ _DEDENT
-    event: "@" ("_" | event_name)
-
-    action: STRING
-    guard: STRING
-    state_name: NAME
-    event_name: NAME
-    state_path: STATE_PATH
-
-    COMMENT: _NEWLINE? /\/\/.*/
-    STATE_PATH: ("../")* (NAME"/")* NAME
-    NAME: LOWER_CASE
-        | CAMEL_CASE
-        | UPPER_CASE
-        | LOWER_CAMEL_CASE
-    LOWER_CASE: /([a-z]+_?)*[a-z]/
-    UPPER_CASE: /([A-Z]+_?)*[A-Z]/
-    CAMEL_CASE: /([A-Z][a-z]+)+/
-    LOWER_CAMEL_CASE: /([a-z]+[A-Z][a-z]+)+/
-    _NEWLINE: /(\r?\n[\t ]*)+/
-'''
-
 
 def collect_attributes(attributes):
     dict_ = {}
@@ -152,7 +108,10 @@ class ScTransformer(Transformer):
 
 def parse(input_):
     try:
-        parser = Lark(sc_grammar, parser='lalr', postlex=ScIndenter())
+        parser = Lark.open('state_chart.lark',
+                           rel_to=__file__,
+                           parser='lalr',
+                           postlex=ScIndenter())
         # all rules expect a newline at the end
         # we just automatically add one at the end of the input
         # in case the user hasn't added it
