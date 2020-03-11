@@ -91,11 +91,11 @@ def assemble(output_style, tokens):
 
 
 def normalize(output_style, *string):
-    assert not output_style is NamingStyle.OTHER
+    assert output_style is not NamingStyle.OTHER
     tokens = []
     for s in string:
         input_style = naming_style(s)
-        assert not input_style is NamingStyle.OTHER
+        assert input_style is not NamingStyle.OTHER
         tokens.extend(tokenize(input_style, s))
 
     return assemble(output_style, tokens)

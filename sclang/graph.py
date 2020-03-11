@@ -1,5 +1,5 @@
 import os
-from subprocess import Popen, PIPE, TimeoutExpired
+from subprocess import Popen, PIPE
 from jinja2 import Environment, FileSystemLoader
 
 current_dir = os.path.dirname(__file__)

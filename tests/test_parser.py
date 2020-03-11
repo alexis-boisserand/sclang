@@ -263,7 +263,7 @@ on
 def test_mix_eventless_regular():
     input = '''
 off
-  @TIMEOUT 
+  @TIMEOUT
     ["count == 3"] -> on
   @_
     ["count == 6"] -> on
@@ -284,7 +284,7 @@ off
     ["count == 3"] -> on
   @_
     ["count == 6"] -> on
-      "set(6)" 
+      "set(6)"
     ["count == 4"] -> off
   yes
     #init
