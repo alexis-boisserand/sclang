@@ -1,8 +1,8 @@
-{% set ns = state_chart_name | lower_case %}
-{% set event_type = ns + '_event_t' %}
-{% set init_sig = 'void ' + ns + '_init(void)' %}
-{% set handle_event_sig = 'void ' + ns + '_handle_event(' + event_type + ' event)' %}
+{% set ns = state_chart_name %}
+{% set event_type = style.type(ns, 'event') %}
+{% set init_sig = 'void ' + style.function(ns, 'init') + '(void)' %}
+{% set handle_event_sig = 'void ' + style.function(ns, 'handle', 'event') + '(' + event_type + ' event)' %}
 
 {% macro make_event_name(event) %}
-{{ ns | upper_case }}_{{ event if event else 'NO_EVENT' | upper_case }}
+{{ style.constant(ns, event if event else 'NO_EVENT') }}
 {%- endmacro %}

@@ -1,5 +1,5 @@
 {% extends 'base.jinja'  %}
-{% set guard = (file_prefix | upper_case) + '_H' %}
+{% set guard = style.constant(file_prefix, 'H') %}
 {% block body %}
 #ifndef {{ guard }}
 #define {{ guard }}

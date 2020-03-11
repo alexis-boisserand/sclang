@@ -1,10 +1,10 @@
 {% import 'state_chart.jinja' as sm with context %}
 {% extends 'base.jinja' %}
 
-{% set state_type = sm.ns + '_state_t' %}
+{% set state_type = style.type(sm.ns, 'state') %}
 
 {% macro make_event_handler_name(state) %}
-{{sm.ns}}_{{state.name | lower_case}}_handle_event
+{{ style.function(sm.ns, state.name, 'handle', 'event') }}
 {%- endmacro %}
 
 {% macro make_event_handler_sig(state) %}
@@ -20,7 +20,7 @@ static void {{make_event_handler_name(state)}}({{sm.event_type}} event)
 
 typedef enum
 {
-    {{ state_chart.states | map(attribute='name') | map('upper_case') | join(',\n    ') }}
+    {{ state_chart.states | map(attribute='name') | map('constant') | join(',\n    ') }}
 } {{ state_type }};
 
 static {{state_type}} current_state;
@@ -36,7 +36,7 @@ static {{state_type}} current_state;
     {
     {% for transition in state.transitions %}
     case {{ sm.make_event_name(transition.event) }}:
-        current_state = {{transition.target | upper_case}};
+        current_state = {{ transition.target | constant }};
         break;
     {% endfor %}
     }
@@ -46,7 +46,7 @@ static {{state_type}} current_state;
 
 {{ sm.init_sig }}
 {
-    current_state = {{ state_chart.states[0].name | upper_case}};
+    current_state = {{ state_chart.states[0].name | constant }};
 }
 
 {{ sm.handle_event_sig }}
@@ -54,48 +54,11 @@ static {{state_type}} current_state;
     switch (current_state)
     {
     {% for state in state_chart.states %}
-    case {{ state.name | upper_case }}:
+    case {{ state.name | constant }}:
         {{ make_event_handler_name(state) }}(event);
         break;
     {% endfor %}
     }
 }
-
-#ifdef UNIT_TEST
-
-{%- set state_desc_type = sm.ns + '_state_desc_t' %}
-
-#include <assert.h>
-#include <stdbool.h>
-#include <stddef.h>
-
-typedef struct
-{
-    {{ state_type }} state;
-    const char* name;
-} {{ state_desc_type }};
-
-static {{ state_desc_type }} states_descriptions[] = 
-{
-{% for state in state_chart.states %}
-    { {{- state.name | upper}}, "{{ state.name }}"}{% if not loop.last %},{% endif %}{{- '\n' -}}
-{% endfor %}
-};
-
-const char* {{sm.ns}}_get_current_state(void)
-{
-    for (size_t i = 0; i < sizeof(states_descriptions) / sizeof({{ state_desc_type}}); i++)
-    {
-        if (states_descriptions[i].state == current_state)
-        {
-            return states_descriptions[i].name;
-        }
-    }
-
-    assert(false);
-    return "";
-}
-
-#endif // UNIT_TEST
 
 {% endblock %}
