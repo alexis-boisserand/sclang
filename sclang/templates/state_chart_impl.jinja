@@ -1,8 +1,6 @@
 {% import 'state_chart.jinja' as sm with context %}
 {% extends 'base.jinja' %}
 
-{% set state_type = style.type(sm.ns, 'state') %}
-
 {% macro make_event_handler_name(state) %}
 {{ style.function(sm.ns, state.name, 'handle', 'event') }}
 {%- endmacro %}
@@ -21,9 +19,9 @@ static void {{make_event_handler_name(state)}}({{sm.event_type}} event)
 typedef enum
 {
     {{ state_chart.states | map(attribute='name') | map('constant') | join(',\n    ') }}
-} {{ state_type }};
+} {{ sm.state_type }};
 
-static {{state_type}} current_state;
+static {{sm.state_type}} current_state;
 
 {% for state in state_chart.states %}
 {{ make_event_handler_sig(state) }};
@@ -35,7 +33,7 @@ static {{state_type}} current_state;
     switch (event)
     {
     {% for transition in state.transitions %}
-    case {{ sm.make_event_name(transition.event) }}:
+    case {{ sm.make_event_name(transition.event_handler.event) }}:
         current_state = {{ transition.target | constant }};
         break;
     {% endfor %}

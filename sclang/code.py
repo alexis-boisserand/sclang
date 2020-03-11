@@ -1,5 +1,5 @@
 import os
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader, StrictUndefined
 from .normalize import upper_case, lower_case, camel_case, lower_camel_case
 
 current_dir = os.path.dirname(__file__)
@@ -18,10 +18,18 @@ style = {
 }
 
 
+def add_path_elements_attr(state_chart):
+    for path, state in state_chart.state_paths.items():
+        path_elements = path.lstrip('/').split('/')
+        state.path_elements = list(path_elements)
+
+
 def code(name, state_chart, output_dir):
+    add_path_elements_attr(state_chart)
     env = Environment(loader=FileSystemLoader(template_dir),
                       trim_blocks=True,
-                      lstrip_blocks=True)
+                      lstrip_blocks=True,
+                      undefined=StrictUndefined)
     env.filters.update(style)
     inputs = [('state_chart_header.jinja', 'h'),
               ('state_chart_impl.jinja', 'c')]

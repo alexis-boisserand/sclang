@@ -1,5 +1,6 @@
 {% set ns = state_chart_name %}
 {% set event_type = style.type(ns, 'event') %}
+{% set state_type = style.type(ns, 'state') %}
 {% set init_sig = 'void ' + style.function(ns, 'init') + '(void)' %}
 {% set handle_event_sig = 'void ' + style.function(ns, 'handle', 'event') + '(' + event_type + ' event)' %}
 

@@ -1,6 +1,6 @@
 import os
 from subprocess import Popen, PIPE
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader, StrictUndefined
 
 current_dir = os.path.dirname(__file__)
 template_dir = os.path.join(current_dir, 'templates')
@@ -23,7 +23,8 @@ def graph(state_chart):
     add_unique_name_attr(state_chart)
     env = Environment(loader=FileSystemLoader(template_dir),
                       trim_blocks=True,
-                      lstrip_blocks=True)
+                      lstrip_blocks=True,
+                      undefined=StrictUndefined)
     template = env.get_template('graph.jinja')
     with Popen(['java', '-jar', plantuml_bin, '-p'], stdin=PIPE,
                stdout=PIPE) as proc:

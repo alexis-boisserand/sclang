@@ -17,19 +17,21 @@
 {% endif %}
 {% endmacro -%}
 
-{% macro make_state(state) %}
+{% macro make_state(state, root) %}
 {% if state.states %}
 [*] --> {{ state.states[0].unique_name }}
 {% endif %}
+{% if not root %}
 {% if state.init_actions %}
 {{ state.unique_name }} : init / {{ state.init_actions|join('\\n') }}
 {% endif %}
 {% if state.exit_actions %}
 {{ state.unique_name }} : exit / {{ state.exit_actions|join('\\n') }}
 {% endif %}
+{% endif %}
 {% for substate in state.states %}
 state {{ substate.unique_name }} {
-    {{ make_state(substate) }}
+    {{ make_state(substate, false) }}
 }
 {% for event_handler in substate.event_handlers %}
 {% for transition in event_handler.transitions %}
@@ -54,5 +56,5 @@ skinparam state {
   FontColor #3e3c49
   FontStyle Bold
 }
-{{ make_state(state_chart) }}
+{{ make_state(state_chart, true) }}
 @enduml

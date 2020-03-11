@@ -14,6 +14,15 @@ typedef enum
 {%- endfor %}
 } {{ sm.event_type }};
 
+typedef enum
+{
+{% for state in state_chart.all_states %}
+    {% if state.is_atomic %}
+    {{ style.constant(sm.ns, *state.path_elements) }}{% if not loop.last %},{% endif %}{{- '\n' -}}
+    {% endif %}
+{%- endfor %}
+} {{ sm.state_type }};
+
 {{ sm.init_sig }};
 {{ sm.handle_event_sig }};
 
