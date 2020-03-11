@@ -5,11 +5,11 @@ import pytest
 def test_simplest():
     input = '''
 off
-  BUTTON_PRESS -> on
-  TIMEOUT -> off
+  @BUTTON_PRESS -> on
+  @TIMEOUT -> off
 
 on
-  TIMEOUT -> off
+  @TIMEOUT -> off
 '''
 
     sc = parse(input)
@@ -27,11 +27,11 @@ def test_garbage_input():
 def test_wrong_indentation():
     input = '''
 off
-  BUTTON_PRESS -> on
-    TIMEOUT -> off
+  @BUTTON_PRESS -> on
+    @TIMEOUT -> off
 
 on
-  TIMEOUT -> off
+  @TIMEOUT -> off
 '''
     with pytest.raises(ParsingError):
         parse(input)
@@ -40,11 +40,11 @@ on
 def test_invalid_state_name():
     input = '''
 off
-  BUTTON_PRESS -> _on
-  TIMEOUT -> off
+  @BUTTON_PRESS -> _on
+  @TIMEOUT -> off
 
 _on
-  TIMEOUT -> off
+  @TIMEOUT -> off
 '''
     with pytest.raises(ParsingError):
         parse(input)
@@ -53,11 +53,11 @@ _on
 def test_invalid_event_name():
     input = '''
 off
-  BUTTON_PRESS -> on
-  TIMEOUT -> off
+  @BUTTON_PRESS -> on
+  @TIMEOUT -> off
 
 on
-  _TIMEOUT -> off
+  @_TIMEOUT -> off
 '''
     with pytest.raises(ParsingError):
         parse(input)
@@ -66,14 +66,14 @@ on
 def test_state_names_not_unique():
     input = '''
 off
-  BUTTON_PRESS -> on
-  TIMEOUT -> off
+  @BUTTON_PRESS -> on
+  @TIMEOUT -> off
 
 on
-  TIMEOUT -> off
+  @TIMEOUT -> off
 
 off
-  TIMEOUT -> on
+  @TIMEOUT -> on
 '''
     with pytest.raises(ParsingError) as exc:
         parse(input)
@@ -83,11 +83,11 @@ off
 def test_invalid_target_name():
     input = '''
 off
-  BUTTON_PRESS -> on
-  TIMEOUT -> off
+  @BUTTON_PRESS -> on
+  @TIMEOUT -> off
 
 on
-  TIMEOUT -> offf
+  @TIMEOUT -> offf
 '''
     with pytest.raises(ParsingError) as exc:
         parse(input)
@@ -97,11 +97,11 @@ on
 def test_unreachable_state():
     input = '''
 off
-  BUTTON_PRESS -> off
-  TIMEOUT -> off
+  @BUTTON_PRESS -> off
+  @TIMEOUT -> off
 
 on
-  TIMEOUT -> off
+  @TIMEOUT -> off
 '''
     with pytest.raises(ParsingError):
         parse(input)
@@ -110,12 +110,12 @@ on
 def test_events_not_unique():
     input = '''
 off
-  BUTTON_PRESS -> on
-  TIMEOUT -> off
-  BUTTON_PRESS -> off
+  @BUTTON_PRESS -> on
+  @TIMEOUT -> off
+  @BUTTON_PRESS -> off
 
 on
-  TIMEOUT -> off
+  @TIMEOUT -> off
 '''
     with pytest.raises(ParsingError) as exc:
         parse(input)
@@ -125,11 +125,12 @@ on
 def test_guard():
     input = '''
 off
-  BUTTON_PRESS -> on
-  TIMEOUT["count == 3"] -> off
+  @BUTTON_PRESS -> on
+  @TIMEOUT
+    ["count == 3"] -> off
 
 on
-  TIMEOUT -> off
+  @TIMEOUT -> off
 '''
     sc = parse(input)
     assert sc.states[0].event_handlers[1].transitions[0].guard == 'count == 3'
@@ -138,13 +139,14 @@ on
 def test_multiple_guards():
     input = '''
 off
-  BUTTON_PRESS -> on
-  TIMEOUT ["count == 3"] -> off
-          ["count == 4"] -> on
-          [else] -> on
+  @BUTTON_PRESS -> on
+  @TIMEOUT
+    ["count == 3"] -> off
+    ["count == 4"] -> on
+    [else] -> on
 
 on
-  TIMEOUT -> off
+  @TIMEOUT -> off
 '''
     sc = parse(input)
     assert sc.states[0].event_handlers[1].transitions[0].guard == 'count == 3'
@@ -156,11 +158,12 @@ on
 def test_only_else_guard():
     input = '''
 off
-  BUTTON_PRESS -> on
-  TIMEOUT [else] -> on
+  @BUTTON_PRESS -> on
+  @TIMEOUT
+    [else] -> on
 
 on
-  TIMEOUT -> off
+  @TIMEOUT -> off
 '''
     with pytest.raises(ParsingError):
         parse(input)
@@ -169,13 +172,14 @@ on
 def test_else_not_final():
     input = '''
 off
-  BUTTON_PRESS -> on
-  TIMEOUT ["count == 3"] -> off
-          [else] -> on
-          ["count == 4"] -> on
+  @BUTTON_PRESS -> on
+  @TIMEOUT
+    ["count == 3"] -> off
+    [else] -> on
+    ["count == 4"] -> on
 
 on
-  TIMEOUT -> off
+  @TIMEOUT -> off
 '''
     with pytest.raises(ParsingError):
         parse(input)
@@ -184,13 +188,14 @@ on
 def test_else_guard_not_unique():
     input = '''
 off
-  BUTTON_PRESS -> on
-  TIMEOUT ["count == 3"] -> off
-          [else] -> on
-          [else] -> off
+  @BUTTON_PRESS -> on
+  @TIMEOUT
+    ["count == 3"] -> off
+    [else] -> on
+    [else] -> off
 
 on
-  TIMEOUT -> off
+  @TIMEOUT -> off
 '''
     with pytest.raises(ParsingError):
         parse(input)
@@ -216,7 +221,7 @@ on
 def test_eventless():
     input = '''
 off
-  @ -> on
+  @_ -> on
 
 on
   @TIMEOUT -> off
@@ -227,8 +232,8 @@ on
 def test_eventless_not_unique():
     input = '''
 off
-  @ -> on
-  @ -> off
+  @_ -> on
+  @_ -> off
 
 on
   @TIMEOUT -> off
@@ -241,7 +246,7 @@ on
 def test_eventless_with_guard_not_unique():
     input = '''
 off
-  @
+  @_
     ["count == 3"] -> on
     ["count == 4"] -> off
     ["count == 4"] -> on
@@ -258,12 +263,14 @@ on
 def test_mix_eventless_regular():
     input = '''
 off
-  TIMEOUT ["count == 3"] -> on
-  _ ["count == 6"] -> on
+  @TIMEOUT 
+    ["count == 3"] -> on
+  @_
+    ["count == 6"] -> on
     ["count == 4"] -> off
 
 on
-  TIMEOUT -> off
+  @TIMEOUT -> off
 '''
     parse(input)
 
@@ -271,46 +278,55 @@ on
 def test_actions():
     input = '''
 off
-  @init "doSomething()"
-  TIMEOUT ["count == 3"] -> on
-  _ ["count == 6"] -> on "set(6)" 
+  #init
+    "doSomething()"
+  @TIMEOUT
+    ["count == 3"] -> on
+  @_
+    ["count == 6"] -> on
+      "set(6)" 
     ["count == 4"] -> off
   yes
-    @init "start()"
-    @exit "stop()"
-    _ -> other
+    #init
+      "start()"
+      "stop()"
+    #exit
+      "stop()"
+      "start()"
+    @_ -> other
   other
 
 on
-  @exit "doSomethingElse()"
-  TIMEOUT -> off
+  #exit
+    "doSomethingElse()"
+  @TIMEOUT -> off
 '''
     sc = parse(input)
-    assert sc.states[0].init == "doSomething()"
-    assert sc.states[0].event_handlers[1].transitions[0].action == "set(6)"
-    assert sc.states[1].exit == "doSomethingElse()"
-    assert sc.states[0].states[0].init == "start()"
-    assert sc.states[0].states[0].exit == "stop()"
+    assert sc.states[0].init_actions == ['doSomething()']
+    assert sc.states[0].event_handlers[1].transitions[0].actions == ['set(6)']
+    assert sc.states[1].exit_actions == ['doSomethingElse()']
+    assert sc.states[0].states[0].init_actions == ['start()', 'stop()']
+    assert sc.states[0].states[0].exit_actions == ['stop()', 'start()']
 
 
 event_names_params = [('''
 off
-  BUTTON_PRESS -> on
-  TIMEOUT -> off
+  @BUTTON_PRESS -> on
+  @TIMEOUT -> off
 
 on
-  TIMEOUT -> off
+  @TIMEOUT -> off
 ''', ['BUTTON_PRESS', 'TIMEOUT']),
                       ('''
 off
-  BUTTON_PRESS -> on
-  TIMEOUT -> off
+  @BUTTON_PRESS -> on
+  @TIMEOUT -> off
   not_really_off
-    SOME_EVENT -> really_off
+    @SOME_EVENT -> really_off
   really_off
-    OTHER_EVENT -> not_really_off
+    @OTHER_EVENT -> not_really_off
 on
-  TIMEOUT -> off
+  @TIMEOUT -> off
 ''', ['BUTTON_PRESS', 'TIMEOUT', 'SOME_EVENT', 'OTHER_EVENT'])]
 
 
@@ -322,23 +338,23 @@ def test_event_names(input, events):
 
 state_paths_params = [('''
 off
-  BUTTON_PRESS -> on
-  TIMEOUT -> off
+  @BUTTON_PRESS -> on
+  @TIMEOUT -> off
 
 on
-  TIMEOUT -> off
+  @TIMEOUT -> off
 ''', ['/off', '/on']),
                       ('''
 off
-  BUTTON_PRESS -> on
-  TIMEOUT -> off
+  @BUTTON_PRESS -> on
+  @TIMEOUT -> off
   not_really_off
-    SOME_EVENT -> really_off
+    @SOME_EVENT -> really_off
     what
   really_off
-    OTHER_EVENT -> not_really_off
+    @OTHER_EVENT -> not_really_off
 on
-  TIMEOUT -> off
+  @TIMEOUT -> off
 ''', [
                           '/off', '/off/not_really_off',
                           '/off/not_really_off/what', '/off/really_off', '/on'
@@ -354,15 +370,15 @@ def test_state_paths(input, state_paths):
 def test_all_states():
     input = '''
 off
-  BUTTON_PRESS -> on
-  TIMEOUT -> off
+  @BUTTON_PRESS -> on
+  @TIMEOUT -> off
   not_really_off
-    SOME_EVENT -> really_off
+    @SOME_EVENT -> really_off
     what
   really_off
-    OTHER_EVENT -> not_really_off
+    @OTHER_EVENT -> not_really_off
 on
-  TIMEOUT -> off
+  @TIMEOUT -> off
 '''
     sc = parse(input)
     assert sc.all_states == list(sc.state_paths.values())
@@ -371,15 +387,15 @@ on
 def test_path():
     input = '''
 off
-  BUTTON_PRESS -> on
-  TIMEOUT -> off
+  @BUTTON_PRESS -> on
+  @TIMEOUT -> off
   not_really_off
-    SOME_EVENT -> really_off
+    @SOME_EVENT -> really_off
     what
   really_off
-    OTHER_EVENT -> not_really_off
+    @OTHER_EVENT -> not_really_off
 on
-  TIMEOUT -> off
+  @TIMEOUT -> off
 '''
     sc = parse(input)
     assert sc.states[0].path == '/off'
@@ -390,14 +406,14 @@ on
 def test_composite():
     input = '''
 off
-  BUTTON_PRESS -> on
-  TIMEOUT -> off
+  @BUTTON_PRESS -> on
+  @TIMEOUT -> off
   not_really_off
-    SOME_EVENT -> really_off
+    @SOME_EVENT -> really_off
   really_off
-    OTHER_EVENT -> not_really_off
+    @OTHER_EVENT -> not_really_off
 on
-  TIMEOUT -> off
+  @TIMEOUT -> off
 '''
     sc = parse(input)
     assert sc.states[0].states[0].name == 'not_really_off'
@@ -415,20 +431,21 @@ on
 def test_composite_valid_target_path():
     input = '''
 off
-  BUTTON_PRESS -> on
-  TIMEOUT -> off
+  @BUTTON_PRESS -> on
+  @TIMEOUT -> off
   not_really_off
-    SOME_EVENT -> ../off
-    EVENT -> really_off
-    THIRD_EVENT -> not_really_off/what
+    @SOME_EVENT -> ../off
+    @EVENT -> really_off
+    @THIRD_EVENT -> not_really_off/what
     what
   really_off
-    OTHER_EVENT -> ../on/what
+    @OTHER_EVENT -> ../on/what
 on
-  TIMEOUT ["i==3"] -> off/really_off
-          [else] -> off/not_really_off/what
+  @TIMEOUT
+    ["i==3"] -> off/really_off
+    [else] -> off/not_really_off/what
   what
-    _ -> ../on
+    @_ -> ../on
 '''
     sc = parse(input)
     assert sc.states[0].states[0].transitions[
@@ -437,35 +454,37 @@ on
 
 composite_invalid_transition_target_params = [('''
 off
-  BUTTON_PRESS -> on
-  TIMEOUT -> off
+  @BUTTON_PRESS -> on
+  @TIMEOUT -> off
   not_really_off
-    SOME_EVENT -> ../off
-    EVENT -> really_off
+    @SOME_EVENT -> ../off
+    @EVENT -> really_off
     what
   really_off
-    OTHER_EVENT -> ../on
+    @OTHER_EVENT -> ../on
 on
-  TIMEOUT ["i==3"] -> really_off
-          [else] -> off/not_really_off/what
+  @TIMEOUT
+    ["i==3"] -> really_off
+    [else] -> off/not_really_off/what
   what
-    _ -> ../off
+    @_ -> ../off
 ''', 'really_off', 'on'),
                                               ('''
 off
-  BUTTON_PRESS -> on
-  TIMEOUT -> off
+  @BUTTON_PRESS -> on
+  @TIMEOUT -> off
   not_really_off
-    SOME_EVENT -> ../off
-    EVENT -> really_off
+    @SOME_EVENT -> ../off
+    @EVENT -> really_off
     what
   really_off
-      OTHER_EVENT -> ../on
+    @OTHER_EVENT -> ../on
 on
-  TIMEOUT ["i==3"] -> off/really_off
-          [else] -> off/what
+  @TIMEOUT
+    ["i==3"] -> off/really_off
+    [else] -> off/what
   what
-    _ -> ../off
+    @_ -> ../off
 ''', 'off/what', 'on')]
 
 
@@ -480,38 +499,40 @@ def test_composite_invalid_transition_target(input, target, state):
 
 invalid_target_path_params = [('''
 off
-  BUTTON_PRESS -> on
-  TIMEOUT -> off
-  OTHER -> ../on
+  @BUTTON_PRESS -> on
+  @TIMEOUT -> off
+  @OTHER -> ../on
   not_really_off
-    SOME_EVENT -> ../off
-    EVENT -> really_off
-    THIRD_EVENT -> not_really_off/what
+    @SOME_EVENT -> ../off
+    @EVENT -> really_off
+    @THIRD_EVENT -> not_really_off/what
     what
   really_off
-      OTHER_EVENT -> ../on/what
+    @OTHER_EVENT -> ../on/what
 on
-  TIMEOUT ["i==3"] -> off/really_off
-          [else] -> off/not_really_off/what
+  @TIMEOUT
+    ["i==3"] -> off/really_off
+    [else] -> off/not_really_off/what
   what
-    _ -> ../on
+    @_ -> ../on
 ''', '../on', 'off'),
                               ('''
 off
-  BUTTON_PRESS -> on
-  TIMEOUT -> off
+  @BUTTON_PRESS -> on
+  @TIMEOUT -> off
   not_really_off
-    SOME_EVENT -> ../../off
-    EVENT -> really_off
-    THIRD_EVENT -> not_really_off/what
+    @SOME_EVENT -> ../../off
+    @EVENT -> really_off
+    @THIRD_EVENT -> not_really_off/what
     what
   really_off
-    OTHER_EVENT -> ../on/what
+    @OTHER_EVENT -> ../on/what
 on
-  TIMEOUT ["i==3"] -> off/really_off
-          [else] -> off/not_really_off/what
+  @TIMEOUT
+    ["i==3"] -> off/really_off
+    [else] -> off/not_really_off/what
   what
-    _ -> ../on
+    @_ -> ../on
 ''', '../../off', 'not_really_off')]
 
 
@@ -526,22 +547,23 @@ def test_invalid_target_path(input, target, state):
 def test_composite_state_names_not_unique():
     input = '''
 off
-  BUTTON_PRESS -> on
-  TIMEOUT -> off
+  @BUTTON_PRESS -> on
+  @TIMEOUT -> off
   not_really_off
-    SOME_EVENT -> ../off
-    EVENT -> really_off
-    THIRD_EVENT -> not_really_off/what
+    @SOME_EVENT -> ../off
+    @EVENT -> really_off
+    @THIRD_EVENT -> not_really_off/what
     what
   really_off
-      OTHER_EVENT -> ../on/what
+    @OTHER_EVENT -> ../on/what
   not_really_off
-    _ -> ../on
+    @_ -> ../on
 on
-  TIMEOUT ["i==3"] -> off/really_off
-          [else] -> off/not_really_off/what
+  @TIMEOUT
+    ["i==3"] -> off/really_off
+    [else] -> off/not_really_off/what
   what
-    _ -> ../on
+    @_ -> ../on
 '''
     with pytest.raises(ParsingError) as exc:
         parse(input)
@@ -551,19 +573,20 @@ on
 def test_composite_unreachable_state():
     input = '''
 off
-  BUTTON_PRESS -> on
-  TIMEOUT -> off
+  @BUTTON_PRESS -> on
+  @TIMEOUT -> off
   not_really_off
-    SOME_EVENT -> ../off
-    THIRD_EVENT -> not_really_off/what
+    @SOME_EVENT -> ../off
+    @THIRD_EVENT -> not_really_off/what
     what
   really_off
-    OTHER_EVENT -> ../on/what
+    @OTHER_EVENT -> ../on/what
 on
-  TIMEOUT ["i==3"] -> on/what
-          [else] -> off/not_really_off/what
+  @TIMEOUT
+    ["i==3"] -> on/what
+    [else] -> off/not_really_off/what
   what
-    _ -> ../off
+    @_ -> ../off
 '''
     with pytest.raises(ParsingError) as exc:
         parse(input)
@@ -573,19 +596,20 @@ on
 def test_composite_reachable_state():
     input = '''
 off
-  BUTTON_PRESS -> on
-  TIMEOUT -> off
+  @BUTTON_PRESS -> on
+  @TIMEOUT -> off
   not_really_off
-    SOME_EVENT -> ../off
-    THIRD_EVENT -> not_really_off/what
+    @SOME_EVENT -> ../off
+    @THIRD_EVENT -> not_really_off/what
     what
   really_off
-    OTHER_EVENT -> ../on/what
+    @OTHER_EVENT -> ../on/what
 on
-  TIMEOUT ["i==3"] -> on/what
-          [else] -> off/not_really_off/what
+  @TIMEOUT
+    ["i==3"] -> on/what
+    [else] -> off/not_really_off/what
   what
-    _ -> ../off/really_off
+    @_ -> ../off/really_off
 '''
     parse(input)
 
@@ -594,21 +618,22 @@ def test_comments():
     input = '''
 // comment 1
 off
-  BUTTON_PRESS -> on // comment 2
-  TIMEOUT -> off
+  @BUTTON_PRESS -> on // comment 2
+  @TIMEOUT -> off
     // comment 3
   not_really_off
   // comment 4
-    SOME_EVENT -> ../off
-    THIRD_EVENT -> not_really_off/what // comment 5
+    @SOME_EVENT -> ../off
+    @THIRD_EVENT -> not_really_off/what // comment 5
     what
   really_off
-    OTHER_EVENT -> ../on/what
+    @OTHER_EVENT -> ../on/what
 on
-  TIMEOUT ["i==3"] -> on/what
-          [else] -> off/not_really_off/what
+  @TIMEOUT
+    ["i==3"] -> on/what
+    [else] -> off/not_really_off/what
   what
-    _ -> ../off/really_off
+    @_ -> ../off/really_off
 
  // comment 6
 // comment 7
