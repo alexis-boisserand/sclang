@@ -9,7 +9,7 @@
 
 typedef enum
 {
-{% for event in state_chart.get_event_names() %}
+{% for event in state_chart.event_names %}
     {{ sm.make_event_name(event) }}{% if not loop.last %},{% endif %}{{- '\n' -}}
 {%- endfor %}
 } {{ sm.event_type }};
