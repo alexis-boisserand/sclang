@@ -23,22 +23,22 @@ class NamingStyle(AutoNumber):
     OTHER = ()
 
 
-def naming_style(str_):
-    if lower_case_reg.fullmatch(str_):
+def naming_style(string):
+    if lower_case_reg.fullmatch(string):
         return NamingStyle.LOWER_CASE
-    if upper_case_reg.fullmatch(str_):
+    if upper_case_reg.fullmatch(string):
         return NamingStyle.UPPER_CASE
-    if camel_case_reg.fullmatch(str_):
+    if camel_case_reg.fullmatch(string):
         return NamingStyle.CAMEL_CASE
-    if lower_camel_case_reg.fullmatch(str_):
+    if lower_camel_case_reg.fullmatch(string):
         return NamingStyle.LOWER_CAMEL_CASE
     return NamingStyle.OTHER
 
 
-def tokenize_camel_case(str_):
+def tokenize_camel_case(string):
     tokens = []
     token = ''
-    for c in str_:
+    for c in string:
         if c.isupper():
             if token != '':
                 tokens.append(token)
@@ -54,27 +54,27 @@ def to_camel_case(tokens):
     return ''.join([token[:1].upper() + token[1:].lower() for token in tokens])
 
 
-def tokenize(str_, input_style):
+def tokenize(input_style, string):
     if input_style in [NamingStyle.LOWER_CASE, NamingStyle.UPPER_CASE]:
-        tokens = str_.split('_')
+        tokens = string.split('_')
     elif input_style is NamingStyle.CAMEL_CASE:
-        tokens = tokenize_camel_case(str_)
+        tokens = tokenize_camel_case(string)
     elif input_style is NamingStyle.LOWER_CAMEL_CASE:
         first_token = ''
-        for c in str_:
+        for c in string:
             if c.islower():
                 first_token += c
             else:
                 break
-        other_tokens = tokenize_camel_case(str_[len(first_token):])
+        other_tokens = tokenize_camel_case(string[len(first_token):])
         tokens = [first_token] + other_tokens
     else:
-        assert False, 'unknown input style'
+        assert False, 'invalid input style'
 
     return tokens
 
 
-def assemble(tokens, output_style):
+def assemble(output_style, tokens):
     if output_style == NamingStyle.LOWER_CASE:
         return '_'.join([token.lower() for token in tokens])
 
@@ -87,29 +87,31 @@ def assemble(tokens, output_style):
     if output_style == NamingStyle.LOWER_CAMEL_CASE:
         return tokens[0].lower() + to_camel_case(tokens[1:])
 
-    assert False, 'unknown style'
+    assert False, 'invalid output style'
 
 
-def normalize(str_, style):
-    input_style = naming_style(str_)
-    if style in [input_style, NamingStyle.OTHER]:
-        return str_
+def normalize(output_style, *string):
+    assert not output_style is NamingStyle.OTHER
+    tokens = []
+    for s in string:
+        input_style = naming_style(s)
+        assert not input_style is NamingStyle.OTHER
+        tokens.extend(tokenize(input_style, s))
 
-    tokens = tokenize(str_, input_style)
-    return assemble(tokens, style)
-
-
-def lower_case(str_):
-    return normalize(str_, NamingStyle.LOWER_CASE)
+    return assemble(output_style, tokens)
 
 
-def upper_case(str_):
-    return normalize(str_, NamingStyle.UPPER_CASE)
+def lower_case(*string):
+    return normalize(NamingStyle.LOWER_CASE, *string)
 
 
-def camel_case(str_):
-    return normalize(str_, NamingStyle.CAMEL_CASE)
+def upper_case(*string):
+    return normalize(NamingStyle.UPPER_CASE, *string)
 
 
-def lower_camel_case(str_):
-    return normalize(str_, NamingStyle.LOWER_CAMEL_CASE)
+def camel_case(*string):
+    return normalize(NamingStyle.CAMEL_CASE, *string)
+
+
+def lower_camel_case(*string):
+    return normalize(NamingStyle.LOWER_CAMEL_CASE, *string)

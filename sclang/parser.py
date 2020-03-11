@@ -96,8 +96,8 @@ class ScTransformer(Transformer):
         return str(name)
 
     @v_args(inline=True)
-    def escaped_string(self, str_):
-        return str(str_).strip('"')
+    def escaped_string(self, string):
+        return str(string).strip('"')
 
     action = escaped_string
     guard = escaped_string
