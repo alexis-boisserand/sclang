@@ -14,8 +14,8 @@ sc_grammar = r'''
     start: (_NEWLINE? state)+
     state: state_name _NEWLINE [_INDENT init? exit? event_handler* state* _DEDENT]
 
-    init: "#init" _NEWLINE [actions]
-    exit: "#exit" _NEWLINE [actions]
+    init: "#init" _NEWLINE actions
+    exit: "#exit" _NEWLINE actions
     event_handler: unguarded_event_handler
                  | guarded_event_handler
 
@@ -27,7 +27,7 @@ sc_grammar = r'''
 
     target: "->" state_path _NEWLINE [actions]
     actions: _INDENT (action _NEWLINE)+ _DEDENT
-    event: "@" event_name?
+    event: "@" ("_" | event_name)
 
     action: STRING
     guard: STRING
@@ -95,11 +95,11 @@ class ScTransformer(Transformer):
         return State(state_name, **collect_attributes(attributes))
 
     @v_args(inline=True)
-    def init(self, *actions):
+    def init(self, actions):
         return dict(init_actions=actions)
 
     @v_args(inline=True)
-    def exit(self, *actions):
+    def exit(self, actions):
         return dict(exit_actions=actions)
 
     @v_args(inline=True)
@@ -129,11 +129,7 @@ class ScTransformer(Transformer):
         return dict(target=state_path, actions=actions[0] if actions else [])
 
     def event(self, children):
-        if len(children) == 1:
-            return children[0]
-        if len(children) == 0:
-            return None
-        assert False
+        return None if len(children) == 0 else children[0]
 
     @v_args(inline=True)
     def actions(self, *actions):

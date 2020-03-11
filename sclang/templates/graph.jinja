@@ -12,7 +12,7 @@
 [{{ transition.guard }}]
 {%- endif %}
 {%- if transition.actions %}
- / "{{ transition.actions|join('\\n') }}"
+ / {{ transition.actions|join('\\n') }}
 {% endif %}
 {% endif %}
 {% endmacro -%}
@@ -22,10 +22,10 @@
 [*] --> {{ state.states[0].unique_name }}
 {% endif %}
 {% if state.init_actions %}
-{{ state.unique_name }} : entry / {{ state.init_actions|join('\\n') }}
+{{ state.unique_name }} : init / {{ state.init_actions|join('\\n') }}
 {% endif %}
 {% if state.exit_actions %}
-{{ state.unique_name }} : entry / {{ state.exit_actions|join('\\n') }}
+{{ state.unique_name }} : exit / {{ state.exit_actions|join('\\n') }}
 {% endif %}
 {% for substate in state.states %}
 state {{ substate.unique_name }} {
