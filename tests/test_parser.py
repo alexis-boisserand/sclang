@@ -309,6 +309,83 @@ on
     assert sc.states[0].states[0].exit_actions == ['stop()', 'start()']
 
 
+def test_internal_external_transition():
+    input = '''
+off
+  #init
+    "doSomething()"
+  @TIMEOUT
+    ["count == 3"] -> on
+  @_
+    ["count == 6"] --
+      "set(6)"
+    ["count == 4"] -> off
+    [else] --
+      "set(7)"
+  yes
+    #init
+      "start()"
+      "stop()"
+    #exit
+      "stop()"
+      "start()"
+    @TO_OTHER -> other
+    @_ --
+      "restart()"
+  other
+
+on
+  #exit
+    "doSomethingElse()"
+  @SOME --
+    "wait()"
+  @TIMEOUT -> off
+'''
+    sc = parse(input)
+    assert sc.states[0].transitions[1].is_internal
+    assert sc.states[0].transitions[1].actions == ['set(6)']
+    assert not sc.states[0].transitions[2].is_internal
+    assert sc.states[0].transitions[3].is_internal
+    assert sc.states[0].states[0].transitions[1].is_internal
+    assert sc.states[0].states[0].transitions[1].actions == ['restart()']
+    assert sc.states[1].transitions[0].is_internal
+
+
+def test_internal_transition_without_action():
+    input = '''
+off
+  #init
+    "doSomething()"
+  @TIMEOUT
+    ["count == 3"] -> on
+  @_
+    ["count == 6"] --
+      "set(6)"
+    ["count == 4"] -> off
+    [else] --
+      "set(7)"
+  yes
+    #init
+      "start()"
+      "stop()"
+    #exit
+      "stop()"
+      "start()"
+    @TO_OTHER -> other
+    @_ --
+      "restart()"
+  other
+
+on
+  #exit
+    "doSomethingElse()"
+  @SOME --
+  @TIMEOUT -> off
+'''
+    with pytest.raises(ParsingError):
+        parse(input)
+
+
 event_names_params = [('''
 off
   @BUTTON_PRESS -> on

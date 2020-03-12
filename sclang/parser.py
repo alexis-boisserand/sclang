@@ -81,8 +81,16 @@ class ScTransformer(Transformer):
         return Transition(**target)
 
     @v_args(inline=True)
-    def target(self, state_path, *actions):
+    def target(self, target_):
+        return target_
+
+    @v_args(inline=True)
+    def external_target(self, state_path, *actions):
         return dict(target=state_path, actions=actions[0] if actions else [])
+
+    @v_args(inline=True)
+    def internal_target(self, actions):
+        return dict(target=None, actions=actions)
 
     def event(self, children):
         return None if len(children) == 0 else children[0]

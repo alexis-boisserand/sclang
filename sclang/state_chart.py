@@ -204,7 +204,14 @@ class Transition(object):
         self.actions = actions
 
     @cached_property
+    def is_internal(self):
+        return self.target is None
+
+    @cached_property
     def target_path(self):
+        if self.is_internal:
+            return self.state.path
+
         def raise_invalid():
             raise DefinitionError(
                 'target path "{}" in state "{}" is invalid'.format(

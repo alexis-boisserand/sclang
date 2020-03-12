@@ -1,10 +1,10 @@
-{% macro make_event_label(event_handler, transition) %}
-{% if event_handler.event is not none 
+{% macro make_event_label(transition) %}
+{% if transition.event_handler.event is not none 
    or transition.guard is not none
    or transition.actions %}
 :
-{%- if event_handler.event is not none %}
-{{ event_handler.event }}
+{%- if transition.event_handler.event is not none %}
+{{ transition.event_handler.event }}
 {%- endif %}
 {%- if transition.has_else_guard %}
 [else]
@@ -31,12 +31,14 @@
 {% endif %}
 {% for substate in state.states %}
 state {{ substate.unique_name }} {
-    {{ make_state(substate, false) }}
+{{ make_state(substate, false) }}
 }
-{% for event_handler in substate.event_handlers %}
-{% for transition in event_handler.transitions %}
-{{ substate.unique_name }} --> {{ state_chart.state_paths[transition.target_path].unique_name }}{{ make_event_label(event_handler, transition) }}
-{% endfor %}
+{% for transition in substate.transitions %}
+{% if not transition.is_internal %}
+{{ substate.unique_name }} --> {{ state_chart.state_paths[transition.target_path].unique_name }}{{ make_event_label(transition) }}
+{% else %}
+{{ substate.unique_name }} {{ make_event_label(transition) }}
+{% endif %}
 {% endfor %}
 {% endfor %}
 {% endmacro -%}

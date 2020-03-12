@@ -18,7 +18,9 @@ guarded_event_handler: event _NEWLINE _INDENT guarded_transition+ else_transitio
 guarded_transition: "[" guard "]" target
 else_transition: "[" "else" "]" target
 
-target: "->" state_path _NEWLINE [actions]
+target: external_target | internal_target
+external_target: "->" state_path _NEWLINE [actions]
+internal_target: "--" _NEWLINE actions
 actions: _INDENT (action _NEWLINE)+ _DEDENT
 event: "@" ("_" | event_name)
 
