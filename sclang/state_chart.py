@@ -136,7 +136,7 @@ class State(StateBase):
             event_handler.state = self
         for transition in self.transitions:
             transition.state = self
-        self._validate_event_names()
+        self._validate_event_handlers()
 
     @cached_property
     def path(self):
@@ -171,7 +171,7 @@ class State(StateBase):
     def is_atomic(self):
         return len(self.states) == 0
 
-    def _validate_event_names(self):
+    def _validate_event_handlers(self):
         event_names = [
             event_handler.event for event_handler in self.event_handlers
         ]

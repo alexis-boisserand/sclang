@@ -107,7 +107,7 @@ on
         parse(input)
 
 
-def test_events_not_unique():
+def test_event_handlers_not_unique():
     input = '''
 off
   @BUTTON_PRESS -> on
