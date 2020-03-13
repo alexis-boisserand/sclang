@@ -9,10 +9,14 @@ template_dir = os.path.join(current_dir, 'templates')
 def type_naming_style(*args):
     return lower_case(*args) + '_t'
 
+def pointer_naming_style(*args):
+    return 'p' + camel_case(*args)
 
 style = {
     'function': lower_case,
     'variable': lower_case,
+    'pointer': lower_case,
+    'field': lower_case,
     'type': type_naming_style,
     'constant': upper_case
 }
@@ -39,5 +43,4 @@ def code(name, state_chart, output_dir):
         output = os.path.join(output_dir, '.'.join([file_prefix, ext]))
         template.stream(state_chart_name=name,
                         state_chart=state_chart,
-                        style=style,
-                        file_prefix=file_prefix).dump(output)
+                        file_prefix=file_prefix, **style).dump(output)
