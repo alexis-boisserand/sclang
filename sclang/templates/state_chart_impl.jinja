@@ -1,12 +1,32 @@
-{% import 'state_chart.jinja' as sm with context %}
+{% import 'state_chart.jinja' as sc with context %}
 {% extends 'base.jinja' %}
 
-{% macro make_event_handler_name(state) %}
-{{ style.function(sm.ns, state.name, 'handle', 'event') }}
+{% macro state_function_name(state, suffix)%}
+{{ function(*(state.path_elements + [suffix])) }}
 {%- endmacro %}
 
-{% macro make_event_handler_sig(state) %}
-static void {{make_event_handler_name(state)}}({{sm.event_type}} event)
+{% macro init_name(state)%}
+{{ state_function_name(state, 'init') }}
+{%- endmacro %}
+
+{% macro exit_name(state)%}
+{{ state_function_name(state, 'exit') }}
+{%- endmacro %}
+
+{% macro event_handler_name(state)%}
+{{ state_function_name(state, 'handle_event') }}
+{%- endmacro %}
+
+{% macro init_sig(state) %}
+{{ sc.function_signature('static void', init_name(state), [sc.state_chart_param]) }}
+{%- endmacro %}
+
+{% macro exit_sig(state) %}
+{{ sc.function_signature('static void', exit_name(state), [sc.state_chart_param]) }}
+{%- endmacro %}
+
+{% macro event_handler_sig(state) %}
+{{ sc.function_signature('static void', event_handler_name(state), sc.event_handler_params) }}
 {%- endmacro %}
 
 {% block description %}
@@ -16,44 +36,56 @@ static void {{make_event_handler_name(state)}}({{sm.event_type}} event)
 {% block body %}
 #include "{{ file_prefix }}.h"
 
-typedef enum
-{
-    {{ state_chart.states | map(attribute='name') | map('constant') | join(',\n    ') }}
-} {{ sm.state_type }};
-
-static {{sm.state_type}} current_state;
-
-{% for state in state_chart.states %}
-{{ make_event_handler_sig(state) }};
+{% for state in state_chart.all_states %}
+{{ init_sig(state) }};
+{{ exit_sig(state) }};
+{{ event_handler_sig(state) }};
 {% endfor %}
 
-{% for state in state_chart.states %}
-{{ make_event_handler_sig(state) }}
+{% for state in state_chart.all_states %}
+{{ init_sig(state) }}
 {
-    switch (event)
+    {% if state.init_actions %}
+    {{ state.init_actions | join(';\n    ') }};
+    {% else %}
+    (void){{ variable('sc') }};
+    {% endif %}
+}
+
+{{ exit_sig(state) }}
+{
+    {% if state.exit_actions %}
+    {{ state.exit_actions | join(';\n    ') }};
+    {% else %}
+    (void){{ variable('sc') }};
+    {% endif %}
+}
+
+{{ event_handler_sig(state) }}
+{
+    switch ({{ variable('evt') }})
     {
     {% for transition in state.transitions %}
-    case {{ sm.make_event_name(transition.event_handler.event) }}:
+    {#case {{ sc.make_event_name(transition.event_handler.event) }}:
         current_state = {{ transition.target | constant }};
-        break;
+        break;#}
     {% endfor %}
     }
 }
 
 {% endfor -%}
 
-{{ sm.init_sig }}
+{{ sc.init_sig }}
 {
-    current_state = {{ state_chart.states[0].name | constant }};
 }
 
-{{ sm.handle_event_sig }}
+{{ sc.event_handler_sig }}
 {
-    switch (current_state)
+    {#switch ({{pointer('sc')}}->{{sc.state_field_name()}})#}
     {
     {% for state in state_chart.states %}
-    case {{ state.name | constant }}:
-        {{ make_event_handler_name(state) }}(event);
+    case {{ sc.state_enum_name(state) }}:
+        {{ event_handler_name(state) }}(event);
         break;
     {% endfor %}
     }

@@ -1,9 +1,35 @@
-{% set ns = state_chart_name %}
-{% set event_type = style.type(ns, 'event') %}
-{% set state_type = style.type(ns, 'state') %}
-{% set init_sig = 'void ' + style.function(ns, 'init') + '(void)' %}
-{% set handle_event_sig = 'void ' + style.function(ns, 'handle', 'event') + '(' + event_type + ' event)' %}
-
-{% macro make_event_name(event) %}
-{{ style.constant(ns, event if event else 'NO_EVENT') }}
+{% macro event_enum_name(event) %}
+{{ constant(ns, event if event else 'NO_EVENT') }}
 {%- endmacro %}
+
+{% macro function_signature(return_type, name, parameters) %}
+{{ return_type }} {{ name }}(
+{%- for type, name in parameters %}
+{{ type }}
+{%- if name %} {{name}}{% endif -%}
+{%- if not loop.last %}, {% endif %}
+{% endfor -%})
+{%- endmacro %}
+
+{% macro state_enum_name(state) %}
+{{ constant(ns, *state.path_elements) }}
+{%- endmacro %}
+
+{% macro state_field_name(state) %}
+{{ field(*(state.path_elements + ['state'])) }}
+{%- endmacro %}
+
+{% set ns = state_chart_name %}
+
+{% set event_type = type(ns, 'event') %}
+{% set state_type = type(ns, 'state') %}
+{% set state_chart_type = type(ns, 'sc') %}
+
+{% set init_sig = function_signature('void', function(ns, 'init'),
+                                       [(state_chart_type + '*', pointer('sc'))]) %}
+
+{% set state_chart_param = (state_chart_type + '*', pointer('sc')) %}
+
+{% set event_handler_params = [state_chart_param, (event_type, variable('evt'))] %}
+                                               
+{% set event_handler_sig = function_signature('void', function(ns, 'handle_event'), event_handler_params) %}

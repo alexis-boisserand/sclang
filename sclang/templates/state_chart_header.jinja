@@ -1,4 +1,4 @@
-{% import 'state_chart.jinja' as sm with context %}
+{% import 'state_chart.jinja' as sc with context %}
 {% extends 'header_base.jinja' %}
 
 {% block description %}
@@ -10,20 +10,31 @@
 typedef enum
 {
 {% for event in state_chart.event_names %}
-    {{ sm.make_event_name(event) }}{% if not loop.last %},{% endif %}{{- '\n' -}}
+    {{ sc.event_enum_name(event) }}{% if not loop.last %},{% endif %}{{- '\n' -}}
 {%- endfor %}
-} {{ sm.event_type }};
+} {{ sc.event_type }};
 
+{% for state in state_chart.all_states %}
+{% if not state.is_atomic %}
 typedef enum
 {
-{% for state in state_chart.all_states %}
-    {% if state.is_atomic %}
-    {{ style.constant(sm.ns, *state.path_elements) }}{% if not loop.last %},{% endif %}{{- '\n' -}}
-    {% endif %}
-{%- endfor %}
-} {{ sm.state_type }};
+{% for substate in state.states %}
+    {{ sc.state_enum_name(substate) }}{% if not loop.last %},{% endif %}{{- '\n' -}}
+{% endfor %}
+} {{ type(sc.ns, *(state.path_elements + ['state'])) }};
 
-{{ sm.init_sig }};
-{{ sm.handle_event_sig }};
+{% endif %}
+{%- endfor %}
+typedef struct
+{
+{% for state in state_chart.all_states %}
+{% if not state.is_atomic %}
+    {{ type(sc.ns, *(state.path_elements + ['state'])) }} {{ sc.state_field_name(state) }};
+{% endif %}
+{%- endfor %}
+} {{ sc.state_chart_type }};
+
+{{ sc.init_sig }};
+{{ sc.event_handler_sig }};
 
 {% endblock %}
