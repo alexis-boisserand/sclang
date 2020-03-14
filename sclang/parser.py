@@ -1,7 +1,7 @@
 from lark import Lark, Transformer, v_args
 from lark.indenter import Indenter
 from lark.exceptions import LarkError
-from .state_chart import Transition, EventHandler, State, StateChart
+from .state_chart import Transition, EventHandler, State, validate_states_are_reachable, validate_transitions_targets
 from .error import Error
 
 
@@ -43,12 +43,15 @@ class ScIndenter(Indenter):
 
 class ScTransformer(Transformer):
     @v_args(inline=True)
-    def start(self, *states):
-        return StateChart(states=states)
+    def start(self, state_name, attributes):
+        state = State(state_name, **attributes)
+        validate_transitions_targets(state)
+        validate_states_are_reachable(state)
+        return state
 
     @v_args(inline=True)
-    def state(self, state_name, *attributes):
-        return State(state_name, **collect_attributes(attributes))
+    def attributes(self, *attributes):
+        return collect_attributes(attributes)
 
     @v_args(inline=True)
     def init(self, actions):
@@ -61,6 +64,10 @@ class ScTransformer(Transformer):
     @v_args(inline=True)
     def event_handler(self, handler):
         return handler
+
+    @v_args(inline=True)
+    def state(self, state_name, *attributes):
+        return State(state_name, **(attributes[0]) if attributes else {})
 
     @v_args(inline=True)
     def unguarded_event_handler(self, event, target):
@@ -92,12 +99,12 @@ class ScTransformer(Transformer):
     def internal_target(self, actions):
         return dict(target=None, actions=actions)
 
-    def event(self, children):
-        return None if len(children) == 0 else children[0]
-
     @v_args(inline=True)
     def actions(self, *actions):
         return list(actions)
+
+    def event(self, children):
+        return None if len(children) == 0 else children[0]
 
     @v_args(inline=True)
     def string_(self, name):

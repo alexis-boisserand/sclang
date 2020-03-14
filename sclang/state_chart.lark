@@ -4,13 +4,14 @@
 %ignore WS_INLINE
 %ignore COMMENT
 
-start: (_NEWLINE? state)+
-state: state_name _NEWLINE [_INDENT init? exit? event_handler* state* _DEDENT]
+start: _NEWLINE? "/" state_name _NEWLINE attributes
+attributes: init? exit? event_handler* state*
 
 init: "#init" _NEWLINE actions
 exit: "#exit" _NEWLINE actions
 event_handler: unguarded_event_handler
              | guarded_event_handler
+state: state_name _NEWLINE [_INDENT attributes _DEDENT]
 
 unguarded_event_handler: event target
 guarded_event_handler: event _NEWLINE _INDENT guarded_transition+ else_transition? _DEDENT

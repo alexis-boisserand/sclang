@@ -17,135 +17,93 @@ def unique(list_):
 
 
 def join(path1, path2):
-    assert (path1 == '/' or not path1.endswith('/')
-            ) and not path2.endswith('/') and not path2.startswith('/')
-    if path1 == '/':
+    if path1 == '':
         return path1 + path2
     return path1 + '/' + path2
 
 
-class StateBase(object):
-    def __init__(self, name, states=[]):
-        self.name = name
-        self.states = states
-        for state in self.states:
-            state.parent = self
-        self._validate_states_names()
-
-    def _validate_states_names(self):
-        if not unique([state.name for state in self.states]):
-            raise DefinitionError('state name not unique in state "{}"'.format(
-                self.name))
+def validate_transitions_targets(root_state):
+    sp = State.state_paths(root_state)
+    for state in sp.values():
+        for transition in state.transitions:
+            if transition.target_path not in sp.keys():
+                raise DefinitionError(
+                    'invalid transition target "{}" in state "{}"'.format(
+                        transition.target, state.name))
 
 
-class StateChart(StateBase):
-    def __init__(self, states=[]):
-        super().__init__('/', states)
-        self._validate_transitions_targets()
-        self._validate_states_are_reachable()
+def validate_states_are_reachable(root_state):
+    # all states are reachable
+    # if all atomic states are reachable
+    # either by being the transition target of a reachable state
+    # or by being the initial state of a reachable state
+    sp = State.state_paths(root_state)
+    assert len(sp) > 0
 
-    @cached_property
-    def state_paths(self):
-        def _state_paths(state):
-            paths = OrderedDict()
-            if state.name != '/':
-                paths[state.name] = state
-            for state_ in state.states:
-                for path_, substate in _state_paths(state_).items():
-                    new_path = join(state.name, path_)
-                    paths[new_path] = substate
-            return paths
+    def next_(srcs):
+        dests = []
+        for src in srcs:
+            for transition in src.transitions:
+                dest = sp[transition.target_path]
+                if dest not in reachables:
+                    dests.append(dest)
+            if not src.is_atomic and src.initial not in reachables:
+                dests.append(src.initial)
+        return dests
 
-        return _state_paths(self)
+    srcs = [root_state.initial]
+    reachables = set(srcs)
+    while len(srcs) > 0:
+        srcs = next_(srcs)
+        reachables.update(srcs)
 
-    @cached_property
-    def all_states(self):
-        def _all_states(state):
-            states = []
-            for state_ in state.states:
-                states.append(state_)
-                states.extend(_all_states(state_))
-            return states
-
-        return _all_states(self)
-
-    @cached_property
-    def event_names(self):
-        def _event_names(state):
-            events = set()
-            for substate in state.states:
-                for event_handler in substate.event_handlers:
-                    events.add(event_handler.event)
-                events.update(_event_names(substate))
-            return events
-
-        return _event_names(self)
-
-    def _validate_transitions_targets(self):
-        state_paths = self.state_paths
-        for state in state_paths.values():
-            for transition in state.transitions:
-                if transition.target_path not in state_paths.keys():
-                    raise DefinitionError(
-                        'invalid transition target "{}" in state "{}"'.format(
-                            transition.target, state.name))
-
-    def _validate_states_are_reachable(self):
-        # all states are reachable
-        # if all atomic states are reachable
-        # either by being the transition target of a reachable state
-        # or by being the initial state of a reachable state
-        state_paths = self.state_paths
-        assert len(state_paths) > 0
-
-        def next_(srcs):
-            dests = []
-            for src in srcs:
-                for transition in src.transitions:
-                    dest = state_paths[transition.target_path]
-                    if dest not in reachables:
-                        dests.append(dest)
-                if not src.is_atomic and src.initial not in reachables:
-                    dests.append(src.initial)
-            return dests
-
-        srcs = [self.states[0]]
-        reachables = set(srcs)
-        while len(srcs) > 0:
-            srcs = next_(srcs)
-            reachables.update(srcs)
-
-        for state in state_paths.values():
-            if state.is_atomic and state not in reachables:
-                raise DefinitionError('state "{}" is unreachable'.format(
-                    state.name))
+    for substate in sp.values():
+        if substate.is_atomic and substate not in reachables:
+            raise DefinitionError('state "{}" is unreachable'.format(
+                substate.name))
 
 
-class State(StateBase):
+class State:
     def __init__(self,
                  name,
                  event_handlers=[],
                  states=[],
                  init_actions=[],
                  exit_actions=[]):
-        super().__init__(name, states)
+        self.name = name
+        self.states = states
         self.event_handlers = event_handlers
         self.init_actions = init_actions
         self.exit_actions = exit_actions
+        self.parent = None
+
+        for state in self.states:
+            state.parent = self
         for event_handler in self.event_handlers:
             event_handler.state = self
         for transition in self.transitions:
             transition.state = self
+
+        self._validate_states_names()
         self._validate_event_names()
 
     @cached_property
     def path(self):
-        elements = [self.name]
+        elements = []
         state = self
         while not state.is_root:
-            elements.append(state.parent.name)
+            elements.append(state.name)
             state = state.parent
-        return '/' + '/'.join(reversed(elements))
+        elements.append(state.name)
+        return '/'.join(reversed(elements))
+
+    @cached_property
+    def all_states(self):
+        states = []
+        for state in self.states:
+            states.append(state)
+            states.extend(state.all_states)
+        return states
 
     @cached_property
     def transitions(self):
@@ -156,10 +114,12 @@ class State(StateBase):
 
     @cached_property
     def is_root(self):
-        return isinstance(self.parent, StateChart)
+        return self.parent is None
 
     @cached_property
     def is_initial(self):
+        if self.is_root:
+            return True
         return self.parent.states[0] is self
 
     @cached_property
@@ -170,6 +130,31 @@ class State(StateBase):
     @cached_property
     def is_atomic(self):
         return len(self.states) == 0
+
+    @staticmethod
+    def state_paths(root_state):
+        paths = OrderedDict()
+        paths[root_state.path] = root_state
+        for state in root_state.all_states:
+            paths[state.path] = state
+        return paths
+
+    @staticmethod
+    def event_names(root_state):
+        def _event_names(state):
+            events = set()
+            for event_handler in state.event_handlers:
+                events.add(event_handler.event)
+            for substate in state.states:
+                events.update(_event_names(substate))
+            return events
+
+        return _event_names(root_state)
+
+    def _validate_states_names(self):
+        if not unique([state.name for state in self.states]):
+            raise DefinitionError('state name not unique in state "{}"'.format(
+                self.name))
 
     def _validate_event_names(self):
         event_names = [
@@ -220,16 +205,16 @@ class Transition(object):
         if self.target.startswith('..'):
             if self.state.is_root:
                 raise_invalid()
-            elements = self.state.parent.path.lstrip('/').split('/')
+            elements = self.state.parent.path.split('/')
             target_elements = self.target.split('/')
             for i, element in enumerate(target_elements):
                 if element != '..':
                     break
             if i > len(elements):
                 raise_invalid()
-            return '/' + '/'.join(elements[:-i] + target_elements[i:])
+            return '/'.join(elements[:-i] + target_elements[i:])
 
-        prefix_path = self.state.parent.path if not self.state.is_root else '/'
+        prefix_path = self.state.parent.path if not self.state.is_root else ''
         return join(prefix_path, self.target)
 
     @cached_property

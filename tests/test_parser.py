@@ -4,6 +4,7 @@ import pytest
 
 def test_simplest():
     input = '''
+/simplest
 off
   @BUTTON_PRESS -> on
   @TIMEOUT -> off
@@ -13,6 +14,7 @@ on
 '''
 
     sc = parse(input)
+    assert sc.name == 'simplest'
     assert len(sc.states) == 2
     assert sc.states[0].name == 'off'
     assert sc.states[1].event_handlers[0].event == 'TIMEOUT'
@@ -26,6 +28,7 @@ def test_garbage_input():
 
 def test_wrong_indentation():
     input = '''
+/some_name
 off
   @BUTTON_PRESS -> on
     @TIMEOUT -> off
@@ -39,6 +42,7 @@ on
 
 def test_invalid_state_name():
     input = '''
+/some_name
 off
   @BUTTON_PRESS -> _on
   @TIMEOUT -> off
@@ -52,6 +56,7 @@ _on
 
 def test_invalid_event_name():
     input = '''
+/some_name
 off
   @BUTTON_PRESS -> on
   @TIMEOUT -> off
@@ -65,6 +70,7 @@ on
 
 def test_state_names_not_unique():
     input = '''
+/some_name
 off
   @BUTTON_PRESS -> on
   @TIMEOUT -> off
@@ -77,11 +83,12 @@ off
 '''
     with pytest.raises(ParsingError) as exc:
         parse(input)
-    assert 'state name not unique in state "/"' in str(exc.value)
+    assert 'state name not unique in state "some_name"' in str(exc.value)
 
 
 def test_invalid_target_name():
     input = '''
+/some_name
 off
   @BUTTON_PRESS -> on
   @TIMEOUT -> off
@@ -96,6 +103,7 @@ on
 
 def test_unreachable_state():
     input = '''
+/some_name
 off
   @BUTTON_PRESS -> off
   @TIMEOUT -> off
@@ -109,6 +117,7 @@ on
 
 def test_event_handlers_not_unique():
     input = '''
+/some_name
 off
   @BUTTON_PRESS -> on
   @TIMEOUT -> off
@@ -124,6 +133,7 @@ on
 
 def test_guard():
     input = '''
+/some_name
 off
   @BUTTON_PRESS -> on
   @TIMEOUT
@@ -138,6 +148,7 @@ on
 
 def test_multiple_guards():
     input = '''
+/some_name
 off
   @BUTTON_PRESS -> on
   @TIMEOUT
@@ -157,6 +168,7 @@ on
 
 def test_only_else_guard():
     input = '''
+/some_name
 off
   @BUTTON_PRESS -> on
   @TIMEOUT
@@ -171,6 +183,7 @@ on
 
 def test_else_not_final():
     input = '''
+/some_name
 off
   @BUTTON_PRESS -> on
   @TIMEOUT
@@ -187,6 +200,7 @@ on
 
 def test_else_guard_not_unique():
     input = '''
+/some_name
 off
   @BUTTON_PRESS -> on
   @TIMEOUT
@@ -203,6 +217,7 @@ on
 
 def test_guard_not_unique():
     input = '''
+/some_name
 off
   @BUTTON_PRESS -> on
   @TIMEOUT
@@ -220,6 +235,7 @@ on
 
 def test_eventless():
     input = '''
+/some_name
 off
   @_ -> on
 
@@ -231,6 +247,7 @@ on
 
 def test_eventless_not_unique():
     input = '''
+/some_name
 off
   @_ -> on
   @_ -> off
@@ -245,6 +262,7 @@ on
 
 def test_eventless_with_guard_not_unique():
     input = '''
+/some_name
 off
   @_
     ["count == 3"] -> on
@@ -262,6 +280,7 @@ on
 
 def test_mix_eventless_regular():
     input = '''
+/some_name
 off
   @TIMEOUT
     ["count == 3"] -> on
@@ -277,6 +296,7 @@ on
 
 def test_actions():
     input = '''
+/some_name
 off
   #init
     "doSomething()"
@@ -311,6 +331,7 @@ on
 
 def test_internal_external_transition():
     input = '''
+/some_name
 off
   #init
     "doSomething()"
@@ -353,6 +374,7 @@ on
 
 def test_internal_transition_without_action():
     input = '''
+/some_name
 off
   #init
     "doSomething()"
@@ -387,6 +409,7 @@ on
 
 
 event_names_params = [('''
+/some_name
 off
   @BUTTON_PRESS -> on
   @TIMEOUT -> off
@@ -395,6 +418,7 @@ on
   @TIMEOUT -> off
 ''', ['BUTTON_PRESS', 'TIMEOUT']),
                       ('''
+/some_name
 off
   @BUTTON_PRESS -> on
   @TIMEOUT -> off
@@ -410,18 +434,20 @@ on
 @pytest.mark.parametrize('input, events', event_names_params)
 def test_event_names(input, events):
     sc = parse(input)
-    assert sc.event_names == set(events)
+    assert sc.event_names(sc) == set(events)
 
 
 state_paths_params = [('''
+/some_name
 off
   @BUTTON_PRESS -> on
   @TIMEOUT -> off
 
 on
   @TIMEOUT -> off
-''', ['/off', '/on']),
+''', ['some_name', 'some_name/off', 'some_name/on']),
                       ('''
+/some_name
 off
   @BUTTON_PRESS -> on
   @TIMEOUT -> off
@@ -433,19 +459,22 @@ off
 on
   @TIMEOUT -> off
 ''', [
-                          '/off', '/off/not_really_off',
-                          '/off/not_really_off/what', '/off/really_off', '/on'
+                          'some_name', 'some_name/off',
+                          'some_name/off/not_really_off',
+                          'some_name/off/not_really_off/what',
+                          'some_name/off/really_off', 'some_name/on'
                       ])]
 
 
 @pytest.mark.parametrize('input, state_paths', state_paths_params)
 def test_state_paths(input, state_paths):
     sc = parse(input)
-    assert list(sc.state_paths.keys()) == state_paths
+    assert list(sc.state_paths(sc).keys()) == state_paths
 
 
 def test_all_states():
     input = '''
+/some_name
 off
   @BUTTON_PRESS -> on
   @TIMEOUT -> off
@@ -458,11 +487,12 @@ on
   @TIMEOUT -> off
 '''
     sc = parse(input)
-    assert sc.all_states == list(sc.state_paths.values())
+    assert [sc] + sc.all_states == list(sc.state_paths(sc).values())
 
 
 def test_path():
     input = '''
+/some_name
 off
   @BUTTON_PRESS -> on
   @TIMEOUT -> off
@@ -475,13 +505,14 @@ on
   @TIMEOUT -> off
 '''
     sc = parse(input)
-    assert sc.states[0].path == '/off'
-    assert sc.states[0].states[1].path == '/off/really_off'
-    assert sc.states[0].states[0].states[0].path == '/off/not_really_off/what'
+    assert sc.states[0].path == 'some_name/off'
+    assert sc.states[0].states[1].path == 'some_name/off/really_off'
+    assert sc.states[0].states[0].states[0].path == 'some_name/off/not_really_off/what'
 
 
 def test_composite():
     input = '''
+/some_name
 off
   @BUTTON_PRESS -> on
   @TIMEOUT -> off
@@ -493,9 +524,10 @@ on
   @TIMEOUT -> off
 '''
     sc = parse(input)
+    assert sc.is_root
     assert sc.states[0].states[0].name == 'not_really_off'
     assert sc.states[0].states[1].name == 'really_off'
-    assert sc.states[1].is_root
+    assert not sc.states[0].is_root
     assert not sc.states[0].states[1].is_root
     assert sc.states[0].is_initial
     assert not sc.states[1].is_initial
@@ -507,6 +539,7 @@ on
 
 def test_composite_valid_target_path():
     input = '''
+/some_name
 off
   @BUTTON_PRESS -> on
   @TIMEOUT -> off
@@ -526,10 +559,11 @@ on
 '''
     sc = parse(input)
     assert sc.states[0].states[0].transitions[
-        2].target_path == '/off/not_really_off/what'
+        2].target_path == 'some_name/off/not_really_off/what'
 
 
 composite_invalid_transition_target_params = [('''
+/some_name
 off
   @BUTTON_PRESS -> on
   @TIMEOUT -> off
@@ -547,6 +581,7 @@ on
     @_ -> ../off
 ''', 'really_off', 'on'),
                                               ('''
+/some_name
 off
   @BUTTON_PRESS -> on
   @TIMEOUT -> off
@@ -575,6 +610,8 @@ def test_composite_invalid_transition_target(input, target, state):
 
 
 invalid_target_path_params = [('''
+/some_name
+@TIMEOUT -> ../off
 off
   @BUTTON_PRESS -> on
   @TIMEOUT -> off
@@ -592,13 +629,14 @@ on
     [else] -> off/not_really_off/what
   what
     @_ -> ../on
-''', '../on', 'off'),
+''', '../off', 'some_name'),
                               ('''
+/some_name
 off
   @BUTTON_PRESS -> on
   @TIMEOUT -> off
   not_really_off
-    @SOME_EVENT -> ../../off
+    @SOME_EVENT -> ../../../off
     @EVENT -> really_off
     @THIRD_EVENT -> not_really_off/what
     what
@@ -610,7 +648,7 @@ on
     [else] -> off/not_really_off/what
   what
     @_ -> ../on
-''', '../../off', 'not_really_off')]
+''', '../../../off', 'not_really_off')]
 
 
 @pytest.mark.parametrize('input, target, state', invalid_target_path_params)
@@ -623,6 +661,7 @@ def test_invalid_target_path(input, target, state):
 
 def test_composite_state_names_not_unique():
     input = '''
+/some_name
 off
   @BUTTON_PRESS -> on
   @TIMEOUT -> off
@@ -649,6 +688,7 @@ on
 
 def test_composite_unreachable_state():
     input = '''
+/some_name
 off
   @BUTTON_PRESS -> on
   @TIMEOUT -> off
@@ -672,6 +712,7 @@ on
 
 def test_composite_reachable_state():
     input = '''
+/some_name
 off
   @BUTTON_PRESS -> on
   @TIMEOUT -> off
@@ -693,6 +734,8 @@ on
 
 def test_comments():
     input = '''
+// comment 0
+/some_name
 // comment 1
 off
   @BUTTON_PRESS -> on // comment 2
