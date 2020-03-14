@@ -2,7 +2,7 @@
 {% if transition.event_handler.event is not none 
    or transition.guard is not none
    or transition.actions %}
-:
+{{' : '}}
 {%- if transition.event_handler.event is not none %}
 {{ transition.event_handler.event }}
 {%- endif %}
@@ -13,36 +13,35 @@
 {%- endif %}
 {%- if transition.actions %}
  / {{ transition.actions|join('\\n') }}
-{% endif %}
+{%- endif %}
 {% endif %}
 {% endmacro -%}
 
 
-{% macro make_state(state, root) %}
-{% if state.states %}
-[*] --> {{ state.states[0].unique_name }}
-{% endif %}
-{% if not root %}
-{% if state.init_actions %}
-{{ state.unique_name }} : init / {{ state.init_actions|join('\\n') }}
-{% endif %}
-{% if state.exit_actions %}
-{{ state.unique_name }} : exit / {{ state.exit_actions|join('\\n') }}
-{% endif %}
-{% endif %}
-{% for substate in state.states %}
-state {{ substate.unique_name }} {
-{{ make_state(substate, false) }}
+{% macro make_state(state) %}
+state {{ state.unique_name }} {
+    {% if state.init_actions %}
+    {{ state.unique_name }} : init / {{ state.init_actions|join('\\n') }}
+    {% endif %}
+    {% if state.exit_actions %}
+    {{ state.unique_name }} : exit / {{ state.exit_actions|join('\\n') }}
+    {% endif %}
+    {% if state.states %}
+    [*] --> {{ state.states[0].unique_name }}
+    {% endif %}
+    {% for transition in state.transitions %}
+    {% if not transition.is_internal %}
+    {{ state.unique_name }} --> {{ transition.target.unique_name }}{{ make_transition(transition) }}
+    {% else %}
+    {{ state.unique_name }} {{ make_transition(transition) }}
+    {% endif %}
+    {% endfor %}
+    {% for substate in state.states %}
+
+    {{ make_state(substate) | indent }}
+    {% endfor %}
 }
-{% for transition in substate.transitions %}
-{% if not transition.is_internal %}
-{{ substate.unique_name }} --> {{ state_chart.state_paths[transition.target_path].unique_name }}{{ make_transition(transition) }}
-{% else %}
-{{ substate.unique_name }} {{ make_transition(transition) }}
-{% endif %}
-{% endfor %}
-{% endfor %}
-{% endmacro -%}
+{%- endmacro -%}
 
 @startuml
 hide empty description
@@ -59,5 +58,6 @@ skinparam state {
   FontColor #3e3c49
   FontStyle Bold
 }
-{{ make_state(state_chart, true) }}
+
+{{ make_state(state_chart) }}
 @enduml
