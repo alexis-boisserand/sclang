@@ -110,13 +110,6 @@ class EventHandler(object):
         self.transitions = transitions
         for transition in self.transitions:
             transition.event_handler = self
-        self._validate_guards()
-
-    def _validate_guards(self):
-        guards = [transition.guard for transition in self.transitions]
-        if not unique(guards):
-            raise DefinitionError('guard not unique for event "{}"'.format(
-                self.event))
 
 
 class Transition(object):

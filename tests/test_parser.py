@@ -229,7 +229,7 @@ off
 on
   @TIMEOUT -> off
 '''
-    with pytest.raises(ParsingError) as exc:
+    with pytest.raises(DefinitionError) as exc:
         parse(input)
     assert 'guard not unique for event "TIMEOUT"' in str(exc.value)
 
@@ -273,7 +273,7 @@ off
 on
   @TIMEOUT -> off
 '''
-    with pytest.raises(ParsingError) as exc:
+    with pytest.raises(DefinitionError) as exc:
         parse(input)
 
     assert 'guard not unique for event "None"' in str(exc.value)

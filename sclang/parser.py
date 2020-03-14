@@ -181,6 +181,13 @@ def validate_event_names(state):
             state.name))
 
 
+def validate_guards(event_handler):
+    guards = [transition.guard for transition in event_handler.transitions]
+    if not unique(guards):
+        raise DefinitionError('guard not unique for event "{}"'.format(
+            event_handler.event))
+
+
 def parse(input_):
     try:
         parser = Lark.open('state_chart.lark',
@@ -195,6 +202,10 @@ def parse(input_):
         state_paths = State.state_paths(root_state)
 
         for state in state_paths.values():
+
+            for event_handler in state.event_handlers:
+                validate_guards(event_handler)
+
             validate_states_names(state)
             validate_event_names(state)
 
