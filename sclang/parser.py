@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from lark import Lark, Transformer, v_args
 from lark.indenter import Indenter
 from lark.exceptions import LarkError
@@ -137,12 +138,20 @@ def join(path1, path2):
     return path1 + '/' + path2
 
 
-def validate_states_are_reachable(state_paths):
+def get_state_paths(root_state):
+    paths = OrderedDict()
+    paths[root_state.path] = root_state
+    for state in root_state.all_states:
+        paths[state.path] = state
+    return paths
+
+
+def validate_states_are_reachable(states):
     # all states are reachable
     # if all atomic states are reachable
     # either by being the transition target of a reachable state
     # or by being the initial state of a reachable state
-    assert len(state_paths) > 0
+    assert len(states) > 0
 
     def next_(srcs):
         dests = []
@@ -154,13 +163,13 @@ def validate_states_are_reachable(state_paths):
                 dests.append(src.initial)
         return dests
 
-    srcs = [next(iter(state_paths.values()))]
+    srcs = [next(iter(states))]
     reachables = set(srcs)
     while len(srcs) > 0:
         srcs = next_(srcs)
         reachables.update(srcs)
 
-    for substate in state_paths.values():
+    for substate in states:
         if substate.is_atomic and substate not in reachables:
             raise DefinitionError('state "{}" is unreachable'.format(
                 substate.name))
@@ -224,7 +233,7 @@ def parse(input_):
         # in case the user hasn't added it
         tree = parser.parse(input_ + '\n')
         root_state = ScTransformer().transform(tree)
-        state_paths = State.state_paths(root_state)
+        state_paths = get_state_paths(root_state)
 
         for state in state_paths.values():
 
@@ -239,15 +248,15 @@ def parse(input_):
                             'invalid transition target "{}" in state "{}"'.
                             format(transition.target, state.name))
                     if transition.target is None:
-                        transition.is_internal = True
+                        transition._is_internal = True
                     else:
-                        transition.is_internal = False
+                        transition._is_internal = False
                         transition.target = target_state
 
             validate_states_names(state)
             validate_event_names(state)
 
-        validate_states_are_reachable(state_paths)
+        validate_states_are_reachable(state_paths.values())
 
         return root_state
     except LarkError as exc:

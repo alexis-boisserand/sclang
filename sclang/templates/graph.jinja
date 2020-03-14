@@ -6,7 +6,7 @@
 {%- if transition.event_handler.event is not none %}
 {{ transition.event_handler.event }}
 {%- endif %}
-{%- if transition.has_else_guard %}
+{%- if transition.is_else_guard %}
 [else]
 {%- elif transition.guard is not none %}
 [{{ transition.guard }}]

@@ -1,4 +1,3 @@
-from collections import OrderedDict
 from cached_property import cached_property
 
 
@@ -67,28 +66,17 @@ class State:
     def is_atomic(self):
         return len(self.states) == 0
 
-    @staticmethod
-    def state_paths(root_state):
-        paths = OrderedDict()
-        paths[root_state.path] = root_state
-        for state in root_state.all_states:
-            paths[state.path] = state
-        return paths
-
-    @staticmethod
-    def event_names(root_state):
-        def _event_names(state):
-            events = set()
-            for event_handler in state.event_handlers:
-                events.add(event_handler.event)
-            for substate in state.states:
-                events.update(_event_names(substate))
-            return events
-
-        return _event_names(root_state)
+    @cached_property
+    def event_names(self):
+        events = set()
+        for event_handler in self.event_handlers:
+            events.add(event_handler.event)
+        for substate in self.states:
+            events.update(substate.event_names)
+        return events
 
 
-class EventHandler(object):
+class EventHandler:
     def __init__(self, event, transitions):
         self.event = event
         self.transitions = transitions
@@ -96,7 +84,7 @@ class EventHandler(object):
             transition.event_handler = self
 
 
-class Transition(object):
+class Transition:
     else_guard = object()
 
     def __init__(self, target, guard=None, actions=[]):
@@ -105,5 +93,9 @@ class Transition(object):
         self.actions = actions
 
     @cached_property
-    def has_else_guard(self):
+    def is_else_guard(self):
         return self.guard is Transition.else_guard
+
+    @property
+    def is_internal(self):
+        return self._is_internal

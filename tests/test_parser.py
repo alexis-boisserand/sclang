@@ -163,8 +163,8 @@ on
     sc = parse(input)
     assert sc.states[0].event_handlers[1].transitions[0].guard == 'count == 3'
     assert sc.states[0].event_handlers[1].transitions[1].guard == 'count == 4'
-    assert not sc.states[0].event_handlers[1].transitions[1].has_else_guard
-    assert sc.states[0].event_handlers[1].transitions[2].has_else_guard
+    assert not sc.states[0].event_handlers[1].transitions[1].is_else_guard
+    assert sc.states[0].event_handlers[1].transitions[2].is_else_guard
 
 
 def test_only_else_guard():
@@ -298,6 +298,10 @@ on
 def test_actions():
     input = '''
 /some_name
+#init
+  "bonjour()"
+#exit
+  "auRevoir()"
 off
   #init
     "doSomething()"
@@ -323,6 +327,8 @@ on
   @TIMEOUT -> off
 '''
     sc = parse(input)
+    assert sc.init_actions == ['bonjour()']
+    assert sc.exit_actions == ['auRevoir()']
     assert sc.states[0].init_actions == ['doSomething()']
     assert sc.states[0].event_handlers[1].transitions[0].actions == ['set(6)']
     assert sc.states[1].exit_actions == ['doSomethingElse()']
@@ -420,6 +426,7 @@ on
 ''', ['BUTTON_PRESS', 'TIMEOUT']),
                       ('''
 /some_name
+@YO -> some_name
 off
   @BUTTON_PRESS -> on
   @TIMEOUT -> off
@@ -429,48 +436,13 @@ off
     @OTHER_EVENT -> not_really_off
 on
   @TIMEOUT -> off
-''', ['BUTTON_PRESS', 'TIMEOUT', 'SOME_EVENT', 'OTHER_EVENT'])]
+''', ['YO', 'BUTTON_PRESS', 'TIMEOUT', 'SOME_EVENT', 'OTHER_EVENT'])]
 
 
 @pytest.mark.parametrize('input, events', event_names_params)
 def test_event_names(input, events):
     sc = parse(input)
-    assert sc.event_names(sc) == set(events)
-
-
-state_paths_params = [('''
-/some_name
-off
-  @BUTTON_PRESS -> on
-  @TIMEOUT -> off
-
-on
-  @TIMEOUT -> off
-''', ['some_name', 'some_name/off', 'some_name/on']),
-                      ('''
-/some_name
-off
-  @BUTTON_PRESS -> on
-  @TIMEOUT -> off
-  not_really_off
-    @SOME_EVENT -> really_off
-    what
-  really_off
-    @OTHER_EVENT -> not_really_off
-on
-  @TIMEOUT -> off
-''', [
-                          'some_name', 'some_name/off',
-                          'some_name/off/not_really_off',
-                          'some_name/off/not_really_off/what',
-                          'some_name/off/really_off', 'some_name/on'
-                      ])]
-
-
-@pytest.mark.parametrize('input, state_paths', state_paths_params)
-def test_state_paths(input, state_paths):
-    sc = parse(input)
-    assert list(sc.state_paths(sc).keys()) == state_paths
+    assert sc.event_names == set(events)
 
 
 def test_all_states():
@@ -488,7 +460,10 @@ on
   @TIMEOUT -> off
 '''
     sc = parse(input)
-    assert [sc] + sc.all_states == list(sc.state_paths(sc).values())
+    assert sc.all_states == [
+        sc.states[0], sc.states[0].states[0], sc.states[0].states[0].states[0],
+        sc.states[0].states[1], sc.states[1]
+    ]
 
 
 def test_path():
