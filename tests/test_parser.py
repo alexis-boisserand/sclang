@@ -561,7 +561,7 @@ on
 '''
     sc = parse(input)
     assert sc.states[0].states[0].transitions[
-        2].target_path == 'some_name/off/not_really_off/what'
+        2].target.path == 'some_name/off/not_really_off/what'
 
 
 composite_invalid_transition_target_params = [('''

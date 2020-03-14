@@ -2,26 +2,7 @@ from lark import Lark, Transformer, v_args
 from lark.indenter import Indenter
 from lark.exceptions import LarkError
 from .state_chart import Transition, EventHandler, State
-from .error import Error, DefinitionError
-
-
-def collect_attributes(attributes):
-    dict_ = {}
-    event_handlers = []
-    states = []
-    for attr in attributes:
-        if isinstance(attr, EventHandler):
-            event_handlers.append(attr)
-        elif isinstance(attr, dict):
-            dict_.update(attr)
-        elif isinstance(attr, State):
-            states.append(attr)
-        else:
-            print(type(attr), attr)
-            assert False
-    dict_['event_handlers'] = event_handlers
-    dict_['states'] = states
-    return dict_
+from .error import Error
 
 
 class ParsingError(Error):
@@ -30,6 +11,10 @@ class ParsingError(Error):
             return super().__str__()
 
         return self.__cause__.__str__()
+
+
+class DefinitionError(Error):
+    pass
 
 
 class ScIndenter(Indenter):
@@ -118,6 +103,25 @@ class ScTransformer(Transformer):
     state_path = string_
 
 
+def collect_attributes(attributes):
+    dict_ = {}
+    event_handlers = []
+    states = []
+    for attr in attributes:
+        if isinstance(attr, EventHandler):
+            event_handlers.append(attr)
+        elif isinstance(attr, dict):
+            dict_.update(attr)
+        elif isinstance(attr, State):
+            states.append(attr)
+        else:
+            print(type(attr), attr)
+            assert False
+    dict_['event_handlers'] = event_handlers
+    dict_['states'] = states
+    return dict_
+
+
 def unique(list_):
     set_ = set()
     for x in list_:
@@ -127,13 +131,10 @@ def unique(list_):
     return True
 
 
-def validate_transitions_targets(state_paths):
-    for state in state_paths.values():
-        for transition in state.transitions:
-            if transition.target_path not in state_paths.keys():
-                raise DefinitionError(
-                    'invalid transition target "{}" in state "{}"'.format(
-                        transition.target, state.name))
+def join(path1, path2):
+    if path1 == '':
+        return path1 + path2
+    return path1 + '/' + path2
 
 
 def validate_states_are_reachable(state_paths):
@@ -147,9 +148,8 @@ def validate_states_are_reachable(state_paths):
         dests = []
         for src in srcs:
             for transition in src.transitions:
-                dest = state_paths[transition.target_path]
-                if dest not in reachables:
-                    dests.append(dest)
+                if transition.target is not None and transition.target not in reachables:
+                    dests.append(transition.target)
             if not src.is_atomic and src.initial not in reachables:
                 dests.append(src.initial)
         return dests
@@ -188,6 +188,31 @@ def validate_guards(event_handler):
             event_handler.event))
 
 
+def validate_target_path(transition):
+    if transition.target is None:
+        return transition.state.path
+
+    def raise_invalid():
+        raise DefinitionError(
+            'target path "{}" in state "{}" is invalid'.format(
+                transition.target, transition.state.name))
+
+    if transition.target.startswith('..'):
+        if transition.state.is_root:
+            raise_invalid()
+        elements = transition.state.parent.path.split('/')
+        target_elements = transition.target.split('/')
+        for i, element in enumerate(target_elements):
+            if element != '..':
+                break
+        if i > len(elements):
+            raise_invalid()
+        return '/'.join(elements[:-i] + target_elements[i:])
+
+    prefix_path = transition.state.parent.path if not transition.state.is_root else ''
+    return join(prefix_path, transition.target)
+
+
 def parse(input_):
     try:
         parser = Lark.open('state_chart.lark',
@@ -206,10 +231,22 @@ def parse(input_):
             for event_handler in state.event_handlers:
                 validate_guards(event_handler)
 
+                for transition in event_handler.transitions:
+                    target_path = validate_target_path(transition)
+                    target_state = state_paths.get(target_path)
+                    if target_state is None:
+                        raise DefinitionError(
+                            'invalid transition target "{}" in state "{}"'.
+                            format(transition.target, state.name))
+                    if transition.target is None:
+                        transition.is_internal = True
+                    else:
+                        transition.is_internal = False
+                        transition.target = target_state
+
             validate_states_names(state)
             validate_event_names(state)
 
-        validate_transitions_targets(state_paths)
         validate_states_are_reachable(state_paths)
 
         return root_state

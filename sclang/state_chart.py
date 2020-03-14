@@ -1,21 +1,5 @@
 from collections import OrderedDict
 from cached_property import cached_property
-from .error import DefinitionError
-
-
-def unique(list_):
-    set_ = set()
-    for x in list_:
-        if x in set_:
-            return False
-        set_.add(x)
-    return True
-
-
-def join(path1, path2):
-    if path1 == '':
-        return path1 + path2
-    return path1 + '/' + path2
 
 
 class State:
@@ -119,35 +103,6 @@ class Transition(object):
         self.target = target
         self.guard = guard
         self.actions = actions
-
-    @cached_property
-    def is_internal(self):
-        return self.target is None
-
-    @cached_property
-    def target_path(self):
-        if self.is_internal:
-            return self.state.path
-
-        def raise_invalid():
-            raise DefinitionError(
-                'target path "{}" in state "{}" is invalid'.format(
-                    self.target, self.state.name))
-
-        if self.target.startswith('..'):
-            if self.state.is_root:
-                raise_invalid()
-            elements = self.state.parent.path.split('/')
-            target_elements = self.target.split('/')
-            for i, element in enumerate(target_elements):
-                if element != '..':
-                    break
-            if i > len(elements):
-                raise_invalid()
-            return '/'.join(elements[:-i] + target_elements[i:])
-
-        prefix_path = self.state.parent.path if not self.state.is_root else ''
-        return join(prefix_path, self.target)
 
     @cached_property
     def has_else_guard(self):
