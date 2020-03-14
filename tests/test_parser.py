@@ -81,7 +81,7 @@ on
 off
   @TIMEOUT -> on
 '''
-    with pytest.raises(ParsingError) as exc:
+    with pytest.raises(DefinitionError) as exc:
         parse(input)
     assert 'state name not unique in state "some_name"' in str(exc.value)
 
@@ -127,7 +127,7 @@ off
 on
   @TIMEOUT -> off
 '''
-    with pytest.raises(ParsingError) as exc:
+    with pytest.raises(DefinitionError) as exc:
         parse(input)
     assert 'event handler not unique in state "off"' in str(exc.value)
 
@@ -256,7 +256,7 @@ off
 on
   @TIMEOUT -> off
 '''
-    with pytest.raises(ParsingError) as exc:
+    with pytest.raises(DefinitionError) as exc:
         parse(input)
     assert 'event handler not unique in state "off"' in str(exc.value)
 
@@ -683,7 +683,7 @@ on
   what
     @_ -> ../on
 '''
-    with pytest.raises(ParsingError) as exc:
+    with pytest.raises(DefinitionError) as exc:
         parse(input)
     assert 'state name not unique in state "off"' in str(exc.value)
 

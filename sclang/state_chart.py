@@ -3,7 +3,6 @@ from cached_property import cached_property
 from .error import DefinitionError
 
 
-
 def unique(list_):
     set_ = set()
     for x in list_:
@@ -39,9 +38,6 @@ class State:
             event_handler.state = self
         for transition in self.transitions:
             transition.state = self
-
-        self._validate_states_names()
-        self._validate_event_names()
 
     @cached_property
     def path(self):
@@ -106,19 +102,6 @@ class State:
             return events
 
         return _event_names(root_state)
-
-    def _validate_states_names(self):
-        if not unique([state.name for state in self.states]):
-            raise DefinitionError('state name not unique in state "{}"'.format(
-                self.name))
-
-    def _validate_event_names(self):
-        event_names = [
-            event_handler.event for event_handler in self.event_handlers
-        ]
-        if not unique(event_names):
-            raise DefinitionError(
-                'event handler not unique in state "{}"'.format(self.name))
 
 
 class EventHandler(object):

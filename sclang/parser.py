@@ -118,45 +118,67 @@ class ScTransformer(Transformer):
     state_path = string_
 
 
-def validate_transitions_targets(root_state):
-    sp = State.state_paths(root_state)
-    for state in sp.values():
+def unique(list_):
+    set_ = set()
+    for x in list_:
+        if x in set_:
+            return False
+        set_.add(x)
+    return True
+
+
+def validate_transitions_targets(state_paths):
+    for state in state_paths.values():
         for transition in state.transitions:
-            if transition.target_path not in sp.keys():
+            if transition.target_path not in state_paths.keys():
                 raise DefinitionError(
                     'invalid transition target "{}" in state "{}"'.format(
                         transition.target, state.name))
 
 
-def validate_states_are_reachable(root_state):
+def validate_states_are_reachable(state_paths):
     # all states are reachable
     # if all atomic states are reachable
     # either by being the transition target of a reachable state
     # or by being the initial state of a reachable state
-    sp = State.state_paths(root_state)
-    assert len(sp) > 0
+    assert len(state_paths) > 0
 
     def next_(srcs):
         dests = []
         for src in srcs:
             for transition in src.transitions:
-                dest = sp[transition.target_path]
+                dest = state_paths[transition.target_path]
                 if dest not in reachables:
                     dests.append(dest)
             if not src.is_atomic and src.initial not in reachables:
                 dests.append(src.initial)
         return dests
 
-    srcs = [root_state.initial]
+    srcs = [next(iter(state_paths.values()))]
     reachables = set(srcs)
     while len(srcs) > 0:
         srcs = next_(srcs)
         reachables.update(srcs)
 
-    for substate in sp.values():
+    for substate in state_paths.values():
         if substate.is_atomic and substate not in reachables:
             raise DefinitionError('state "{}" is unreachable'.format(
                 substate.name))
+
+
+def validate_states_names(state):
+    if not unique([state.name for state in state.states]):
+        raise DefinitionError('state name not unique in state "{}"'.format(
+            state.name))
+
+
+def validate_event_names(state):
+    event_names = [
+        event_handler.event for event_handler in state.event_handlers
+    ]
+    if not unique(event_names):
+        raise DefinitionError('event handler not unique in state "{}"'.format(
+            state.name))
 
 
 def parse(input_):
@@ -170,8 +192,15 @@ def parse(input_):
         # in case the user hasn't added it
         tree = parser.parse(input_ + '\n')
         root_state = ScTransformer().transform(tree)
-        validate_transitions_targets(root_state)
-        validate_states_are_reachable(root_state)
+        state_paths = State.state_paths(root_state)
+
+        for state in state_paths.values():
+            validate_states_names(state)
+            validate_event_names(state)
+
+        validate_transitions_targets(state_paths)
+        validate_states_are_reachable(state_paths)
+
         return root_state
     except LarkError as exc:
         raise ParsingError from exc
