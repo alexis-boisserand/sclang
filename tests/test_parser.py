@@ -1,4 +1,4 @@
-from sclang import parse, ParsingError
+from sclang import parse, ParsingError, DefinitionError
 import pytest
 
 
@@ -96,7 +96,7 @@ off
 on
   @TIMEOUT -> offf
 '''
-    with pytest.raises(ParsingError) as exc:
+    with pytest.raises(DefinitionError) as exc:
         parse(input)
     assert 'invalid transition target "offf" in state "on"' in str(exc.value)
 
@@ -111,8 +111,9 @@ off
 on
   @TIMEOUT -> off
 '''
-    with pytest.raises(ParsingError):
+    with pytest.raises(DefinitionError) as exc:
         parse(input)
+    assert 'state "on" is unreachable' in str(exc.value)
 
 
 def test_event_handlers_not_unique():
@@ -507,7 +508,8 @@ on
     sc = parse(input)
     assert sc.states[0].path == 'some_name/off'
     assert sc.states[0].states[1].path == 'some_name/off/really_off'
-    assert sc.states[0].states[0].states[0].path == 'some_name/off/not_really_off/what'
+    assert sc.states[0].states[0].states[
+        0].path == 'some_name/off/not_really_off/what'
 
 
 def test_composite():
@@ -603,7 +605,7 @@ on
 @pytest.mark.parametrize('input, target, state',
                          composite_invalid_transition_target_params)
 def test_composite_invalid_transition_target(input, target, state):
-    with pytest.raises(ParsingError) as exc:
+    with pytest.raises(DefinitionError) as exc:
         parse(input)
     assert 'invalid transition target "{}" in state "{}"'.format(
         target, state) in str(exc.value)
@@ -653,7 +655,7 @@ on
 
 @pytest.mark.parametrize('input, target, state', invalid_target_path_params)
 def test_invalid_target_path(input, target, state):
-    with pytest.raises(ParsingError) as exc:
+    with pytest.raises(DefinitionError) as exc:
         parse(input)
     assert 'target path "{}" in state "{}" is invalid'.format(
         target, state) in str(exc.value)
@@ -705,7 +707,7 @@ on
   what
     @_ -> ../off
 '''
-    with pytest.raises(ParsingError) as exc:
+    with pytest.raises(DefinitionError) as exc:
         parse(input)
     assert 'state "really_off" is unreachable' in str(exc.value)
 

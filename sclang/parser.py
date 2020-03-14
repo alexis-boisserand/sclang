@@ -1,8 +1,8 @@
 from lark import Lark, Transformer, v_args
 from lark.indenter import Indenter
 from lark.exceptions import LarkError
-from .state_chart import Transition, EventHandler, State, validate_states_are_reachable, validate_transitions_targets
-from .error import Error
+from .state_chart import Transition, EventHandler, State
+from .error import Error, DefinitionError
 
 
 def collect_attributes(attributes):
@@ -44,10 +44,7 @@ class ScIndenter(Indenter):
 class ScTransformer(Transformer):
     @v_args(inline=True)
     def start(self, state_name, attributes):
-        state = State(state_name, **attributes)
-        validate_transitions_targets(state)
-        validate_states_are_reachable(state)
-        return state
+        return State(state_name, **attributes)
 
     @v_args(inline=True)
     def attributes(self, *attributes):
@@ -121,6 +118,47 @@ class ScTransformer(Transformer):
     state_path = string_
 
 
+def validate_transitions_targets(root_state):
+    sp = State.state_paths(root_state)
+    for state in sp.values():
+        for transition in state.transitions:
+            if transition.target_path not in sp.keys():
+                raise DefinitionError(
+                    'invalid transition target "{}" in state "{}"'.format(
+                        transition.target, state.name))
+
+
+def validate_states_are_reachable(root_state):
+    # all states are reachable
+    # if all atomic states are reachable
+    # either by being the transition target of a reachable state
+    # or by being the initial state of a reachable state
+    sp = State.state_paths(root_state)
+    assert len(sp) > 0
+
+    def next_(srcs):
+        dests = []
+        for src in srcs:
+            for transition in src.transitions:
+                dest = sp[transition.target_path]
+                if dest not in reachables:
+                    dests.append(dest)
+            if not src.is_atomic and src.initial not in reachables:
+                dests.append(src.initial)
+        return dests
+
+    srcs = [root_state.initial]
+    reachables = set(srcs)
+    while len(srcs) > 0:
+        srcs = next_(srcs)
+        reachables.update(srcs)
+
+    for substate in sp.values():
+        if substate.is_atomic and substate not in reachables:
+            raise DefinitionError('state "{}" is unreachable'.format(
+                substate.name))
+
+
 def parse(input_):
     try:
         parser = Lark.open('state_chart.lark',
@@ -131,6 +169,9 @@ def parse(input_):
         # we just automatically add one at the end of the input
         # in case the user hasn't added it
         tree = parser.parse(input_ + '\n')
-        return ScTransformer().transform(tree)
+        root_state = ScTransformer().transform(tree)
+        validate_transitions_targets(root_state)
+        validate_states_are_reachable(root_state)
+        return root_state
     except LarkError as exc:
         raise ParsingError from exc

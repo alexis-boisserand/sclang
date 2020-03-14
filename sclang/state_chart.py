@@ -1,10 +1,7 @@
 from collections import OrderedDict
 from cached_property import cached_property
-from .error import Error
+from .error import DefinitionError
 
-
-class DefinitionError(Error):
-    pass
 
 
 def unique(list_):
@@ -20,47 +17,6 @@ def join(path1, path2):
     if path1 == '':
         return path1 + path2
     return path1 + '/' + path2
-
-
-def validate_transitions_targets(root_state):
-    sp = State.state_paths(root_state)
-    for state in sp.values():
-        for transition in state.transitions:
-            if transition.target_path not in sp.keys():
-                raise DefinitionError(
-                    'invalid transition target "{}" in state "{}"'.format(
-                        transition.target, state.name))
-
-
-def validate_states_are_reachable(root_state):
-    # all states are reachable
-    # if all atomic states are reachable
-    # either by being the transition target of a reachable state
-    # or by being the initial state of a reachable state
-    sp = State.state_paths(root_state)
-    assert len(sp) > 0
-
-    def next_(srcs):
-        dests = []
-        for src in srcs:
-            for transition in src.transitions:
-                dest = sp[transition.target_path]
-                if dest not in reachables:
-                    dests.append(dest)
-            if not src.is_atomic and src.initial not in reachables:
-                dests.append(src.initial)
-        return dests
-
-    srcs = [root_state.initial]
-    reachables = set(srcs)
-    while len(srcs) > 0:
-        srcs = next_(srcs)
-        reachables.update(srcs)
-
-    for substate in sp.values():
-        if substate.is_atomic and substate not in reachables:
-            raise DefinitionError('state "{}" is unreachable'.format(
-                substate.name))
 
 
 class State:
