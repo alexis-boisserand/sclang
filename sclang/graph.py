@@ -10,7 +10,7 @@ plantuml_bin = os.path.join(current_dir, 'plantuml', 'plantuml.jar')
 
 def add_unique_name_attr(state_chart):
     names = set()
-    for state in [state_chart] + state_chart.all_states:
+    for state in state_chart.all_states:
         if state.name not in names:
             unique_name = state.name
         else:

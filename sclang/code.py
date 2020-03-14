@@ -25,7 +25,7 @@ style = {
 
 
 def add_path_elements_attr(state_chart):
-    for state in [state_chart] + state_chart.all_states:
+    for state in state_chart.all_states:
         path_elements = state.path.split('/')
         state.path_elements = list(path_elements)
 

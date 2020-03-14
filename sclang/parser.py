@@ -140,7 +140,6 @@ def join(path1, path2):
 
 def get_state_paths(root_state):
     paths = OrderedDict()
-    paths[root_state.path] = root_state
     for state in root_state.all_states:
         paths[state.path] = state
     return paths

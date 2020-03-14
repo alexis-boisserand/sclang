@@ -34,9 +34,8 @@ class State:
 
     @cached_property
     def all_states(self):
-        states = []
+        states = [self]
         for state in self.states:
-            states.append(state)
             states.extend(state.all_states)
         return states
 

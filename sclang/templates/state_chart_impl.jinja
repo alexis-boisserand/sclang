@@ -81,11 +81,11 @@
 
 {{ sc.event_handler_sig }}
 {
-    {#switch ({{pointer('sc')}}->{{sc.state_field_name()}})#}
+    switch ({{pointer('sc')}}->{{sc.state_field_name(state_chart)}})
     {
     {% for state in state_chart.states %}
     case {{ sc.state_enum_name(state) }}:
-        {{ event_handler_name(state) }}(event);
+        {{ event_handler_name(state) }}({{ variable('evt') }});
         break;
     {% endfor %}
     }

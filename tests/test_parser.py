@@ -461,8 +461,8 @@ on
 '''
     sc = parse(input)
     assert sc.all_states == [
-        sc.states[0], sc.states[0].states[0], sc.states[0].states[0].states[0],
-        sc.states[0].states[1], sc.states[1]
+        sc, sc.states[0], sc.states[0].states[0],
+        sc.states[0].states[0].states[0], sc.states[0].states[1], sc.states[1]
     ]
 
 
