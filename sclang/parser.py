@@ -221,6 +221,33 @@ def validate_target_path(transition):
     return join(prefix_path, transition.target)
 
 
+def validate(root_state):
+    state_paths = get_state_paths(root_state)
+
+    for state in state_paths.values():
+
+        for event_handler in state.event_handlers:
+            validate_guards(event_handler)
+
+            for transition in event_handler.transitions:
+                target_path = validate_target_path(transition)
+                target_state = state_paths.get(target_path)
+                if target_state is None:
+                    raise DefinitionError(
+                        'invalid transition target "{}" in state "{}"'.format(
+                            transition.target, state.name))
+                if transition.target is None:
+                    transition._is_internal = True
+                else:
+                    transition._is_internal = False
+                    transition.target = target_state
+
+        validate_states_names(state)
+        validate_event_names(state)
+
+    validate_states_are_reachable(state_paths.values())
+
+
 def parse(input_):
     try:
         parser = Lark.open('state_chart.lark',
@@ -232,31 +259,7 @@ def parse(input_):
         # in case the user hasn't added it
         tree = parser.parse(input_ + '\n')
         root_state = ScTransformer().transform(tree)
-        state_paths = get_state_paths(root_state)
-
-        for state in state_paths.values():
-
-            for event_handler in state.event_handlers:
-                validate_guards(event_handler)
-
-                for transition in event_handler.transitions:
-                    target_path = validate_target_path(transition)
-                    target_state = state_paths.get(target_path)
-                    if target_state is None:
-                        raise DefinitionError(
-                            'invalid transition target "{}" in state "{}"'.
-                            format(transition.target, state.name))
-                    if transition.target is None:
-                        transition._is_internal = True
-                    else:
-                        transition._is_internal = False
-                        transition.target = target_state
-
-            validate_states_names(state)
-            validate_event_names(state)
-
-        validate_states_are_reachable(state_paths.values())
-
+        validate(root_state)
         return root_state
     except LarkError as exc:
         raise ParsingError from exc
