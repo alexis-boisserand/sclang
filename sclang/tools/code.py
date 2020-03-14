@@ -28,9 +28,7 @@ def main():
         print('Failed to read {}: {}'.format(args.state_chart.name, str(exc)))
         sys.exit(1)
 
-    code(
-        os.path.splitext(os.path.basename(args.state_chart.name))[0],
-        state_chart, args.output)
+    code(state_chart, args.output)
 
 
 if __name__ == '__main__':

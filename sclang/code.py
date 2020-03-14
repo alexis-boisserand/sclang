@@ -25,12 +25,12 @@ style = {
 
 
 def add_path_elements_attr(state_chart):
-    for path, state in state_chart.state_paths.items():
-        path_elements = path.lstrip('/').split('/')
+    for state in [state_chart] + state_chart.all_states:
+        path_elements = state.path.split('/')
         state.path_elements = list(path_elements)
 
 
-def code(name, state_chart, output_dir):
+def code(state_chart, output_dir):
     add_path_elements_attr(state_chart)
     env = Environment(loader=FileSystemLoader(template_dir),
                       trim_blocks=True,
@@ -39,11 +39,10 @@ def code(name, state_chart, output_dir):
     env.filters.update(style)
     inputs = [('state_chart_header.jinja', 'h'),
               ('state_chart_impl.jinja', 'c')]
-    file_prefix = lower_case(name)
+    file_prefix = lower_case(state_chart.name)
     for input_, ext in inputs:
         template = env.get_template(input_)
         output = os.path.join(output_dir, '.'.join([file_prefix, ext]))
-        template.stream(state_chart_name=name,
-                        state_chart=state_chart,
+        template.stream(state_chart=state_chart,
                         file_prefix=file_prefix,
                         **style).dump(output)

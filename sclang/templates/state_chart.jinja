@@ -12,14 +12,14 @@
 {%- endmacro %}
 
 {% macro state_enum_name(state) %}
-{{ constant(ns, *state.path_elements) }}
+{{ constant(*state.path_elements) }}
 {%- endmacro %}
 
 {% macro state_field_name(state) %}
 {{ field(*(state.path_elements + ['state'])) }}
 {%- endmacro %}
 
-{% set ns = state_chart_name %}
+{% set ns = state_chart.name %}
 
 {% set event_type = type(ns, 'event') %}
 {% set state_type = type(ns, 'state') %}
