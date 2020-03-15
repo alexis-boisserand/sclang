@@ -1,8 +1,6 @@
 #include "simplest.h"
 
-#include <string.h>
 #include <assert.h>
-#include <stdio.h>
 
 int main(int argc, char** argv)
 {

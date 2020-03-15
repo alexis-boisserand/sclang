@@ -35,6 +35,11 @@
 {% endif %}
 {%- endmacro %}
 
+{% macro transition(state, transition) %}
+{{ exit_name(state) }}({{ sc.state_chart_pointer }});
+{{ init_name(transition.target) }}({{ sc.state_chart_pointer }});
+{%- endmacro %}
+
 {% block description %}
  * {{root_state.name}} statechart implementation.
 {% endblock %}
@@ -73,8 +78,20 @@
     {% for event_handler in state.event_handlers %}
     case {{ sc.event_enum_name(event_handler.event) }}:
         {% if event_handler.is_unguarded %}
-        {{ exit_name(state) }}({{ sc.state_chart_pointer }});
-        {{ init_name(event_handler.transitions[0].target) }}({{ sc.state_chart_pointer }});
+        {{ transition(state, event_handler.transitions[0]) | indent(width=8) }}
+        {% else %}
+        {% for transition_ in event_handler.transitions %}
+        {% if loop.first %}
+        if ({{ transition_.guard }})
+        {% elif loop.last and transition_.is_else_guard %}
+        else
+        {% else %}
+        else if ({{ transition_.guard }})
+        {% endif %}
+        {
+            {{ transition(state, transition_) | indent(width=12) }}
+        }
+        {% endfor %}
         {% endif %}
         break;
     {% endfor %}
