@@ -1,5 +1,5 @@
 {% extends 'base.jinja'  %}
-{% set guard = constant(file_prefix, 'H') %}
+{% set guard = constant(root_state.name, 'H') %}
 {% block body %}
 #ifndef {{ guard }}
 #define {{ guard }}

@@ -23,12 +23,12 @@ def main():
 
     try:
         with args.state_chart:
-            state_chart = parse(args.state_chart.read())
+            root_state = parse(args.state_chart.read())
     except ParsingError as exc:
         print('Failed to read {}: {}'.format(args.state_chart.name, str(exc)))
         sys.exit(1)
 
-    code(state_chart, args.output)
+    code(root_state, args.output)
 
 
 if __name__ == '__main__':

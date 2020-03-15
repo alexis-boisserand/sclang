@@ -19,7 +19,7 @@ def main():
 
     try:
         with args.state_chart:
-            state_chart = parse(args.state_chart.read())
+            root_state = parse(args.state_chart.read())
     except ParsingError as exc:
         print('Failed to load {}: {}'.format(args.state_chart.name, str(exc)))
         sys.exit(1)
@@ -31,7 +31,7 @@ def main():
         output_name = base + '.png'
         output = open(output_name, 'wb')
     with output:
-        output.write(graph(state_chart))
+        output.write(graph(root_state))
 
 
 if __name__ == '__main__':

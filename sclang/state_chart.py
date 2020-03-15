@@ -88,6 +88,10 @@ class EventHandler:
         for transition in self.transitions:
             transition.event_handler = self
 
+    @cached_property
+    def is_unguarded(self):
+        return len(self.transitions) == 1 and self.transitions[0].guard is None
+
 
 class Transition:
     else_guard = object()

@@ -29,26 +29,31 @@
 {{ sc.function_signature('static void', event_handler_name(state), sc.event_handler_params) }}
 {%- endmacro %}
 
+{% macro actions(actions) %}
+{% if actions %}
+{{ actions | join(';\n') }};
+{% endif %}
+{%- endmacro %}
+
 {% block description %}
- * {{state_chart.name}} statechart implementation.
+ * {{root_state.name}} statechart implementation.
 {% endblock %}
 
 {% block body %}
-#include "{{ file_prefix }}.h"
+#include "{{ filename(root_state.name) }}.h"
 
-{% for state in state_chart.all_states %}
+{% for state in root_state.all_states[1:] %}
 {{ init_sig(state) }};
 {{ exit_sig(state) }};
 {{ event_handler_sig(state) }};
 {% endfor %}
 
-{% for state in state_chart.all_states %}
+{% for state in root_state.all_states[1:] %}
 {{ init_sig(state) }}
 {
+    {{ sc.state_chart_pointer }}->{{ sc.state_field_name(state.parent) }} = {{ sc.state_enum_name(state) }};
     {% if state.init_actions %}
     {{ state.init_actions | join(';\n    ') }};
-    {% else %}
-    (void){{ variable('sc') }};
     {% endif %}
 }
 
@@ -57,35 +62,38 @@
     {% if state.exit_actions %}
     {{ state.exit_actions | join(';\n    ') }};
     {% else %}
-    (void){{ variable('sc') }};
+    (void){{ sc.state_chart_pointer }};
     {% endif %}
 }
 
 {{ event_handler_sig(state) }}
 {
-    switch ({{ variable('evt') }})
+    switch ({{ sc.event_variable }})
     {
-    {% for transition in state.transitions %}
-    {#case {{ sc.make_event_name(transition.event_handler.event) }}:
-        current_state = {{ transition.target | constant }};
-        break;#}
+    {% for event_handler in state.event_handlers %}
+    case {{ sc.event_enum_name(event_handler.event) }}:
+        {% if event_handler.is_unguarded %}
+        {{ actions(event_handler.transitions[0].actions) }}
+        {%- endif %}
+        break;
     {% endfor %}
     }
 }
 
 {% endfor -%}
 
-{{ sc.init_sig }}
+{{ sc.state_chart_init_sig }}
 {
+    {{ init_name(root_state.initial) }}({{ sc.state_chart_pointer }});
 }
 
-{{ sc.event_handler_sig }}
+{{ sc.state_chart_event_handler_sig }}
 {
-    switch ({{pointer('sc')}}->{{sc.state_field_name(state_chart)}})
+    switch ({{sc.state_chart_pointer }}->{{sc.state_field_name(root_state)}})
     {
-    {% for state in state_chart.states %}
+    {% for state in root_state.states %}
     case {{ sc.state_enum_name(state) }}:
-        {{ event_handler_name(state) }}({{ variable('evt') }});
+        {{ event_handler_name(state) }}({{ sc.state_chart_pointer }}, {{ sc.event_variable }});
         break;
     {% endfor %}
     }

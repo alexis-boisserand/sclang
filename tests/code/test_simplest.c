@@ -4,24 +4,18 @@
 #include <assert.h>
 #include <stdio.h>
 
-const char* simplest_get_current_state(void);
-
-void check_state(const char* state)
-{
-    assert(strcmp(simplest_get_current_state(), state) == 0);
-}
-
 int main(int argc, char** argv)
 {
-    simplest_init();
-    check_state("Off");
-    simplest_handle_event(SIMPLEST_TIMEOUT);
-    check_state("Off");
-    simplest_handle_event(SIMPLEST_BUTTON_PRESS);
-    check_state("On");
-    simplest_handle_event(SIMPLEST_BUTTON_PRESS);
-    check_state("On");
-    simplest_handle_event(SIMPLEST_TIMEOUT);
-    check_state("Off");
+    simplest_sc_t sc;
+    simplest_init(&sc);
+    assert(sc.state == SIMPLEST_ON);
+    simplest_handle_event(&sc, SIMPLEST_PRESS);
+    assert(sc.state == SIMPLEST_ON);
+    simplest_handle_event(&sc, SIMPLEST_TIMEOUT);
+    assert(sc.state == SIMPLEST_OFF);
+    simplest_handle_event(&sc, SIMPLEST_TIMEOUT);
+    assert(sc.state == SIMPLEST_OFF);
+    simplest_handle_event(&sc, SIMPLEST_PRESS);
+    assert(sc.state == SIMPLEST_ON);
     return 0;
 }

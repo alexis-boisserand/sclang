@@ -15,6 +15,7 @@ def pointer_naming_style(*args):
 
 
 style = {
+    'filename': lower_case,
     'function': lower_case,
     'variable': lower_case,
     'pointer': lower_case,
@@ -24,14 +25,14 @@ style = {
 }
 
 
-def add_path_elements_attr(state_chart):
-    for state in state_chart.all_states:
+def add_path_elements_attr(root_state):
+    for state in root_state.all_states:
         path_elements = state.path.split('/')
         state.path_elements = list(path_elements)
 
 
-def code(state_chart, output_dir):
-    add_path_elements_attr(state_chart)
+def code(root_state, output_dir):
+    add_path_elements_attr(root_state)
     env = Environment(loader=FileSystemLoader(template_dir),
                       trim_blocks=True,
                       lstrip_blocks=True,
@@ -39,10 +40,8 @@ def code(state_chart, output_dir):
     env.filters.update(style)
     inputs = [('state_chart_header.jinja', 'h'),
               ('state_chart_impl.jinja', 'c')]
-    file_prefix = lower_case(state_chart.name)
+    file_prefix = style['filename'](root_state.name)
     for input_, ext in inputs:
         template = env.get_template(input_)
         output = os.path.join(output_dir, '.'.join([file_prefix, ext]))
-        template.stream(state_chart=state_chart,
-                        file_prefix=file_prefix,
-                        **style).dump(output)
+        template.stream(root_state=root_state, **style).dump(output)

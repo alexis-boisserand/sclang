@@ -2,19 +2,19 @@
 {% extends 'header_base.jinja' %}
 
 {% block description %}
- * Declarations for the {{ state_chart.name }} statechart.
+ * Declarations for the {{ root_state.name }} statechart.
 {% endblock %}
 
 {% block decl %}
 
 typedef enum
 {
-{% for event in state_chart.event_names %}
+{% for event in root_state.event_names %}
     {{ sc.event_enum_name(event) }}{% if not loop.last %},{% endif %}{{- '\n' -}}
 {%- endfor %}
 } {{ sc.event_type }};
 
-{% for state in state_chart.all_states %}
+{% for state in root_state.all_states %}
 {% if not state.is_atomic %}
 typedef enum
 {
@@ -29,14 +29,14 @@ typedef enum
 {%- endfor %}
 typedef struct
 {
-{% for state in state_chart.all_states %}
+{% for state in root_state.all_states %}
 {% if not state.is_atomic %}
     {{ sc.state_enum_type_name(state) }} {{ sc.state_field_name(state) }};
 {% endif %}
 {%- endfor %}
 } {{ sc.state_chart_type }};
 
-{{ sc.init_sig }};
-{{ sc.event_handler_sig }};
+{{ sc.state_chart_init_sig }};
+{{ sc.state_chart_event_handler_sig }};
 
 {% endblock %}

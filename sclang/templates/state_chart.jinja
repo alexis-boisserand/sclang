@@ -20,20 +20,30 @@
 {%- endmacro %}
 
 {% macro state_field_name(state) %}
-{{ field(*(state.path_elements + ['state'])) }}
+{{ field(*(state.path_elements[1:] + ['state'])) }}
 {%- endmacro %}
 
-{% set ns = state_chart.name %}
+{% set ns = root_state.name %}
 
 {% set event_type = type(ns, 'event') %}
+
 {% set state_type = type(ns, 'state') %}
+
 {% set state_chart_type = type(ns, 'sc') %}
 
-{% set init_sig = function_signature('void', function(ns, 'init'),
-                                       [(state_chart_type + '*', pointer('sc'))]) %}
+{% set state_chart_pointer = pointer('sc') %}
 
-{% set state_chart_param = (state_chart_type + '*', pointer('sc')) %}
+{% set state_chart_param = (state_chart_type + '*', state_chart_pointer) %}
 
-{% set event_handler_params = [state_chart_param, (event_type, variable('evt'))] %}
-                                               
-{% set event_handler_sig = function_signature('void', function(ns, 'handle_event'), event_handler_params) %}
+{% set init_suffix = 'init' %}
+
+{% set state_chart_init_sig = function_signature('void', function(ns, init_suffix),
+                                       [state_chart_param]) %}
+
+{% set event_variable = variable('evt') %}
+
+{% set event_handler_params = [state_chart_param, (event_type, event_variable)] %}
+
+{% set event_handler_suffix = 'handle_event' %}
+
+{% set state_chart_event_handler_sig = function_signature('void', function(ns, event_handler_suffix), event_handler_params) %}
