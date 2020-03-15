@@ -246,6 +246,8 @@ on
 '''
     sc = parse(input)
     assert sc.initial.is_transient
+    assert not sc.is_transient
+    assert not sc.states[1].is_transient
 
 
 def test_transient_state_with_guard_not_unique():
