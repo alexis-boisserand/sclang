@@ -73,8 +73,9 @@
     {% for event_handler in state.event_handlers %}
     case {{ sc.event_enum_name(event_handler.event) }}:
         {% if event_handler.is_unguarded %}
-        {{ actions(event_handler.transitions[0].actions) }}
-        {%- endif %}
+        {{ exit_name(state) }}({{ sc.state_chart_pointer }});
+        {{ init_name(event_handler.transitions[0].target) }}({{ sc.state_chart_pointer }});
+        {% endif %}
         break;
     {% endfor %}
     }
