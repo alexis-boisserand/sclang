@@ -74,7 +74,8 @@ class State:
     def event_names(self):
         events = set()
         for event_handler in self.event_handlers:
-            events.add(event_handler.event)
+            if event_handler.event is not None:
+                events.add(event_handler.event)
         for substate in self.states:
             events.update(substate.event_names)
         return events

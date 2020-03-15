@@ -15,6 +15,10 @@
 {{ constant(*state.path_elements) }}
 {%- endmacro %}
 
+{% macro state_enum_type_name(state) %}
+{{ type(*(state.path_elements + ['state'])) }}
+{%- endmacro %}
+
 {% macro state_field_name(state) %}
 {{ field(*(state.path_elements + ['state'])) }}
 {%- endmacro %}

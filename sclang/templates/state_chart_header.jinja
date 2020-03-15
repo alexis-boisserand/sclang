@@ -19,9 +19,11 @@ typedef enum
 typedef enum
 {
 {% for substate in state.states %}
+{% if not substate.is_transient %}
     {{ sc.state_enum_name(substate) }}{% if not loop.last %},{% endif %}{{- '\n' -}}
+{% endif %}
 {% endfor %}
-} {{ type(*(state.path_elements + ['state'])) }};
+} {{ sc.state_enum_type_name(state) }};
 
 {% endif %}
 {%- endfor %}
@@ -29,7 +31,7 @@ typedef struct
 {
 {% for state in state_chart.all_states %}
 {% if not state.is_atomic %}
-    {{ type(*(state.path_elements + ['state'])) }} {{ sc.state_field_name(state) }};
+    {{ sc.state_enum_type_name(state) }} {{ sc.state_field_name(state) }};
 {% endif %}
 {%- endfor %}
 } {{ sc.state_chart_type }};
