@@ -9,15 +9,11 @@ plantuml_bin = os.path.join(current_dir, 'plantuml', 'plantuml.jar')
 
 
 def add_unique_name_attr(state_chart):
-    names = set()
+    names = dict()
     for state in state_chart.all_states:
-        if state.name not in names:
-            unique_name = state.name
-        else:
-            unique_name = state.name + '_'
-
-        names.add(unique_name)
-        state.unique_name = unique_name
+        count = names.get(state.name, 0)
+        state.unique_name = state.name + count * '_'
+        names[state.name] = count + 1
 
 
 def graph(state_chart):
