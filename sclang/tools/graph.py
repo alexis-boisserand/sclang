@@ -24,14 +24,15 @@ def main():
         print('Failed to load {}: {}'.format(args.state_chart.name, str(exc)))
         sys.exit(1)
 
-    if args.output:
-        output = args.output
-    else:
-        base = os.path.splitext(os.path.basename(args.state_chart.name))[0]
-        output_name = base + '.png'
-        output = open(output_name, 'wb')
-    with output:
-        output.write(graph(state_chart))
+    print(state_chart)
+    #if args.output:
+    #    output = args.output
+    #else:
+    #    base = os.path.splitext(os.path.basename(args.state_chart.name))[0]
+    #    output_name = base + '.png'
+    #    output = open(output_name, 'wb')
+    #with output:
+    #    output.write(graph(state_chart))
 
 
 if __name__ == '__main__':

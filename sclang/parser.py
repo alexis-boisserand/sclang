@@ -49,8 +49,12 @@ class ScTransformer(Transformer):
         return handler
 
     @v_args(inline=True)
-    def state(self, state_name, *attributes):
-        return State(state_name, **(attributes[0]) if attributes else {})
+    def state(self, state):
+        return state
+
+    @v_args(inline=True)
+    def actions(self, *actions):
+        return list(actions)
 
     @v_args(inline=True)
     def unguarded_event_handler(self, event, target):
@@ -61,14 +65,18 @@ class ScTransformer(Transformer):
         return EventHandler(event, transitions=transitions)
 
     @v_args(inline=True)
-    def guarded_transition(self, guard, target):
-        target['guard'] = guard
-        return Transition(**target)
+    def regular_state(self, state_name, *attributes):
+        return State(state_name, **(attributes[0]) if attributes else {})
 
     @v_args(inline=True)
-    def else_transition(self, target):
-        target['guard'] = Transition.else_guard
-        return Transition(**target)
+    def transient_state(self, state_name, *transitions):
+        return State(
+            state_name,
+            event_handlers=[EventHandler(None, transitions=transitions)])
+
+    @v_args(inline=True)
+    def event(self, event_name):
+        return event_name
 
     @v_args(inline=True)
     def target(self, target_):
@@ -83,11 +91,24 @@ class ScTransformer(Transformer):
         return dict(target=None, actions=actions)
 
     @v_args(inline=True)
-    def actions(self, *actions):
-        return list(actions)
+    def guarded_transition(self, guard, target):
+        target['guard'] = guard
+        return Transition(**target)
 
-    def event(self, children):
-        return None if len(children) == 0 else children[0]
+    @v_args(inline=True)
+    def else_transition(self, target):
+        target['guard'] = Transition.else_guard
+        return Transition(**target)
+
+    @v_args(inline=True)
+    def transient_guarded_transition(self, guard, target):
+        target['guard'] = guard
+        return Transition(**target)
+
+    @v_args(inline=True)
+    def transient_else_transition(self, target):
+        target['guard'] = Transition.else_guard
+        return Transition(**target)
 
     @v_args(inline=True)
     def string_(self, name):
@@ -97,10 +118,10 @@ class ScTransformer(Transformer):
     def escaped_string(self, string):
         return str(string).strip('"')
 
-    action = escaped_string
-    guard = escaped_string
     state_name = string_
     event_name = string_
+    action = escaped_string
+    guard = escaped_string
     state_path = string_
 
 

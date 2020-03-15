@@ -11,24 +11,32 @@ init: "#init" _NEWLINE actions
 exit: "#exit" _NEWLINE actions
 event_handler: unguarded_event_handler
              | guarded_event_handler
-state: state_name _NEWLINE [_INDENT attributes _DEDENT]
+state: regular_state
+     | transient_state
+
+actions: _INDENT (action _NEWLINE)+ _DEDENT
 
 unguarded_event_handler: event target
 guarded_event_handler: event _NEWLINE _INDENT guarded_transition+ else_transition? _DEDENT
 
-guarded_transition: "[" guard "]" target
-else_transition: "[" "else" "]" target
+regular_state: state_name _NEWLINE [_INDENT attributes _DEDENT]
+transient_state: "<>" state_name _NEWLINE _INDENT transient_guarded_transition+ transient_else_transition _DEDENT
 
-target: external_target | internal_target
+event: "@" event_name
+target: external_target 
+      | internal_target
 external_target: "->" state_path _NEWLINE [actions]
 internal_target: "--" _NEWLINE actions
-actions: _INDENT (action _NEWLINE)+ _DEDENT
-event: "@" ("_" | event_name)
 
-action: STRING
-guard: STRING
+guarded_transition: "[" guard "]" target
+else_transition: "[" "else" "]" target
+transient_guarded_transition: "[" guard "]" external_target
+transient_else_transition: "[" "else" "]" external_target
+
 state_name: NAME
 event_name: NAME
+action: STRING
+guard: STRING
 state_path: STATE_PATH
 
 COMMENT: _NEWLINE? /\/\/.*/

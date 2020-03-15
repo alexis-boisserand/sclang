@@ -57,6 +57,11 @@ class State:
         return self.parent.states[0] is self
 
     @cached_property
+    def is_transient(self):
+        return len(
+            self.event_handlers) == 1 and self.event_handlers[0].event is None
+
+    @cached_property
     def initial(self):
         assert not self.is_atomic
         return self.states[0]

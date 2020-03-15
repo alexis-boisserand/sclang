@@ -234,41 +234,28 @@ on
     assert 'guard not unique for event "TIMEOUT"' in str(exc.value)
 
 
-def test_eventless():
+def test_transient_state():
     input = '''
 /some_name
-off
-  @_ -> on
+<>off
+  ["true"] -> on
+  [else] -> off
 
 on
   @TIMEOUT -> off
 '''
-    parse(input)
+    sc = parse(input)
+    assert sc.initial.is_transient
 
 
-def test_eventless_not_unique():
+def test_transient_state_with_guard_not_unique():
     input = '''
 /some_name
-off
-  @_ -> on
-  @_ -> off
-
-on
-  @TIMEOUT -> off
-'''
-    with pytest.raises(DefinitionError) as exc:
-        parse(input)
-    assert 'event handler not unique in state "off"' in str(exc.value)
-
-
-def test_eventless_with_guard_not_unique():
-    input = '''
-/some_name
-off
-  @_
-    ["count == 3"] -> on
-    ["count == 4"] -> off
-    ["count == 4"] -> on
+<>off
+  ["count == 3"] -> on
+  ["count == 4"] -> on
+  ["count == 4"] -> on
+  [else] -> on
 
 on
   @TIMEOUT -> off
@@ -277,22 +264,6 @@ on
         parse(input)
 
     assert 'guard not unique for event "None"' in str(exc.value)
-
-
-def test_mix_eventless_regular():
-    input = '''
-/some_name
-off
-  @TIMEOUT
-    ["count == 3"] -> on
-  @_
-    ["count == 6"] -> on
-    ["count == 4"] -> off
-
-on
-  @TIMEOUT -> off
-'''
-    parse(input)
 
 
 def test_actions():
@@ -307,10 +278,11 @@ off
     "doSomething()"
   @TIMEOUT
     ["count == 3"] -> on
-  @_
-    ["count == 6"] -> on
+  <>half_off
+    ["count == 6"] -> other
       "set(6)"
-    ["count == 4"] -> off
+    [else] -> yes
+      "set(7)"
   yes
     #init
       "start()"
@@ -318,7 +290,6 @@ off
     #exit
       "stop()"
       "start()"
-    @_ -> other
   other
 
 on
@@ -330,10 +301,11 @@ on
     assert sc.init_actions == ['bonjour()']
     assert sc.exit_actions == ['auRevoir()']
     assert sc.states[0].init_actions == ['doSomething()']
-    assert sc.states[0].event_handlers[1].transitions[0].actions == ['set(6)']
+    assert sc.states[0].states[0].transitions[0].actions == ['set(6)']
+    assert sc.states[0].states[0].transitions[1].actions == ['set(7)']
     assert sc.states[1].exit_actions == ['doSomethingElse()']
-    assert sc.states[0].states[0].init_actions == ['start()', 'stop()']
-    assert sc.states[0].states[0].exit_actions == ['stop()', 'start()']
+    assert sc.states[0].states[1].init_actions == ['start()', 'stop()']
+    assert sc.states[0].states[1].exit_actions == ['stop()', 'start()']
 
 
 def test_internal_external_transition():
@@ -344,7 +316,7 @@ off
     "doSomething()"
   @TIMEOUT
     ["count == 3"] -> on
-  @_
+  @OTHER
     ["count == 6"] --
       "set(6)"
     ["count == 4"] -> off
@@ -358,7 +330,7 @@ off
       "stop()"
       "start()"
     @TO_OTHER -> other
-    @_ --
+    @WHAT --
       "restart()"
   other
 
@@ -387,7 +359,7 @@ off
     "doSomething()"
   @TIMEOUT
     ["count == 3"] -> on
-  @_
+  @OTHER
     ["count == 6"] --
       "set(6)"
     ["count == 4"] -> off
@@ -401,7 +373,7 @@ off
       "stop()"
       "start()"
     @TO_OTHER -> other
-    @_ --
+    @OTHER --
       "restart()"
   other
 
@@ -532,7 +504,7 @@ on
     ["i==3"] -> off/really_off
     [else] -> off/not_really_off/what
   what
-    @_ -> ../on
+    @OTHER -> ../on
 '''
     sc = parse(input)
     assert sc.states[0].states[0].transitions[
@@ -555,7 +527,7 @@ on
     ["i==3"] -> really_off
     [else] -> off/not_really_off/what
   what
-    @_ -> ../off
+    @OTHER -> ../off
 ''', 'really_off', 'on'),
                                               ('''
 /some_name
@@ -573,7 +545,7 @@ on
     ["i==3"] -> off/really_off
     [else] -> off/what
   what
-    @_ -> ../off
+    @OTHER -> ../off
 ''', 'off/what', 'on')]
 
 
@@ -605,7 +577,7 @@ on
     ["i==3"] -> off/really_off
     [else] -> off/not_really_off/what
   what
-    @_ -> ../on
+    @OTHER -> ../on
 ''', '../off', 'some_name'),
                               ('''
 /some_name
@@ -624,7 +596,7 @@ on
     ["i==3"] -> off/really_off
     [else] -> off/not_really_off/what
   what
-    @_ -> ../on
+    @OTHER -> ../on
 ''', '../../../off', 'not_really_off')]
 
 
@@ -650,13 +622,13 @@ off
   really_off
     @OTHER_EVENT -> ../on/what
   not_really_off
-    @_ -> ../on
+    @OTHER -> ../on
 on
   @TIMEOUT
     ["i==3"] -> off/really_off
     [else] -> off/not_really_off/what
   what
-    @_ -> ../on
+    @OTHER -> ../on
 '''
     with pytest.raises(DefinitionError) as exc:
         parse(input)
@@ -680,7 +652,7 @@ on
     ["i==3"] -> on/what
     [else] -> off/not_really_off/what
   what
-    @_ -> ../off
+    @OTHER -> ../off
 '''
     with pytest.raises(DefinitionError) as exc:
         parse(input)
@@ -704,7 +676,7 @@ on
     ["i==3"] -> on/what
     [else] -> off/not_really_off/what
   what
-    @_ -> ../off/really_off
+    @OTHER -> ../off/really_off
 '''
     parse(input)
 
@@ -730,7 +702,7 @@ on
     ["i==3"] -> on/what
     [else] -> off/not_really_off/what
   what
-    @_ -> ../off/really_off
+    @OTHER -> ../off/really_off
 
  // comment 6
 // comment 7
