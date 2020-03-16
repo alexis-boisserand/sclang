@@ -1,8 +1,7 @@
 #include "guard.h"
-
 #include <assert.h>
 
-int number = 0;
+int number;
 
 int main(int argc, char** argv)
 {

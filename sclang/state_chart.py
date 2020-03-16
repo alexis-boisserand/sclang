@@ -107,4 +107,4 @@ class Transition:
 
     @property
     def is_internal(self):
-        return self._is_internal
+        return self.target is None

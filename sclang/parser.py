@@ -257,10 +257,8 @@ def validate(root_state):
                     raise DefinitionError(
                         'invalid transition target "{}" in state "{}"'.format(
                             transition.target, state.name))
-                if transition.target is None:
-                    transition._is_internal = True
-                else:
-                    transition._is_internal = False
+                # internal transition mean target is None
+                if transition.target is not None:
                     transition.target = target_state
 
         validate_states_names(state)

@@ -36,9 +36,13 @@
 {%- endmacro %}
 
 {% macro transition(state, transition) %}
+{% if transition.is_internal %}
+{{ actions(transition.actions) -}}
+{% else %}
 {{ exit_name(state) }}({{ sc.state_chart_pointer }});
 {{ actions(transition.actions) -}}
 {{ init_name(transition.target) }}({{ sc.state_chart_pointer }});
+{% endif %}
 {%- endmacro %}
 
 {% block description %}

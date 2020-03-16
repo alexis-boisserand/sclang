@@ -2,7 +2,7 @@
 
 #include <assert.h>
 
-int numbers[3] = {0, 0, 0};
+int numbers[3];
 
 int main(int argc, char** argv)
 {
