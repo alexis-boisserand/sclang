@@ -7,16 +7,15 @@
 {{ transition.event_handler.event }}
 {%- endif %}
 {%- if transition.is_else_guard %}
-[else]
+{{ ' ' }}[else]
 {%- elif transition.guard is not none %}
-[{{ transition.guard }}]
+{{ ' ' }}[{{ transition.guard }}]
 {%- endif %}
 {%- if transition.actions %}
  / {{ transition.actions|join('\\n') }}
 {%- endif %}
 {% endif %}
 {% endmacro -%}
-
 
 {% macro make_state(state) %}
 {% if state.is_atomic %}

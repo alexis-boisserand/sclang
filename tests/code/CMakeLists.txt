@@ -18,3 +18,4 @@ endfunction()
 
 add_test(simplest)
 add_test(guard)
+add_test(actions)

@@ -37,6 +37,7 @@
 
 {% macro transition(state, transition) %}
 {{ exit_name(state) }}({{ sc.state_chart_pointer }});
+{{ actions(transition.actions) -}}
 {{ init_name(transition.target) }}({{ sc.state_chart_pointer }});
 {%- endmacro %}
 

@@ -1,7 +1,3 @@
-{% macro event_enum_name(event) %}
-{{ constant(ns, event if event else 'NO_EVENT') }}
-{%- endmacro %}
-
 {% macro function_signature(return_type, name, parameters) %}
 {{ return_type }} {{ name }}(
 {%- for type, name in parameters %}
@@ -12,7 +8,11 @@
 {%- endmacro %}
 
 {% macro state_enum_name(state) %}
-{{ constant(*state.path_elements) }}
+{{ constant(state.path_elements[0], 'st', *state.path_elements[1:]) }}
+{%- endmacro %}
+
+{% macro event_enum_name(event) %}
+{{ constant(ns, 'evt', event) }}
 {%- endmacro %}
 
 {% macro state_enum_type_name(state) %}
