@@ -17,15 +17,22 @@
 {% endif %}
 {% endmacro -%}
 
-{% macro make_state(state) %}
+{% macro decl_state(state) %}
 {% if state.is_atomic %}
 state {{ state.unique_name }} {% if state.is_transient %}<<choice>>{% endif %}
-{% else %}
+{% endif %}
+{%- endmacro -%}
+
+{% macro make_state(state) %}
+{% if not state.is_atomic %}
 state {{ state.unique_name }} {
     {% for substate in state.states %}
-    {{ make_state(substate) | indent }}
-
+    {{ decl_state(substate) | indent }}
     {% endfor %}
+    {% for substate in state.states %}
+    {{ make_state(substate) | indent -}}
+    {% endfor %}
+
     [*] --> {{ state.states[0].unique_name }}
 }
 {% endif %}
