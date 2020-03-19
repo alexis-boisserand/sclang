@@ -1,0 +1,6 @@
+#ifndef TRANSIENT_STATE_DEFINITIONS_H
+#define TRANSIENT_STATE_DEFINITIONS_H
+
+extern int number;
+
+#endif

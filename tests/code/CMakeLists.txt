@@ -12,11 +12,14 @@ function (add_test name)
                     WORKING_DIRECTORY ${sclang_root}
                     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${name}.sc)
 
-    add_executable(test_${name} test_${name}.c ${CMAKE_CURRENT_BINARY_DIR}/${name}.c)
-    target_include_directories(test_${name} PRIVATE ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
+    add_executable(${name} test_${name}.c ${CMAKE_CURRENT_BINARY_DIR}/${name}.c)
+    target_include_directories(${name} PRIVATE ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
+    add_custom_target(${name}_test ALL ${CMAKE_CURRENT_BINARY_DIR}/${name}
+                                   DEPENDS ${name})
 endfunction()
 
 add_test(simplest)
 add_test(guard)
 add_test(actions)
 add_test(internal_transition)
+add_test(transient_state)

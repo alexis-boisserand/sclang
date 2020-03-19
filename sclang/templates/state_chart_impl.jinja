@@ -39,7 +39,9 @@
 {% if transition.is_internal %}
 {{ actions(transition.actions) -}}
 {% else %}
+{% if state.exit_actions %}
 {{ exit_name(state) }}({{ sc.state_chart_pointer }});
+{% endif %}
 {{ actions(transition.actions) -}}
 {{ init_name(transition.target) }}({{ sc.state_chart_pointer }});
 {% endif %}
@@ -69,27 +71,37 @@ else if ({{ transition_.guard }})
 
 {% for state in root_state.all_states[1:] %}
 {{ init_sig(state) }};
+{% if not state.is_transient %}
+{% if state.exit_actions %}
 {{ exit_sig(state) }};
+{% endif %}
+{% if state.event_handlers %}
 {{ event_handler_sig(state) }};
+{% endif %}
+{% endif %}
 {% endfor %}
 
 {% for state in root_state.all_states[1:] %}
 {{ init_sig(state) }}
 {
+    {% if state.is_transient %}
+    {{ guarded_event_handler(state, state.event_handlers[0]) | indent -}}
+    {% else %}
     {{ sc.state_chart_pointer }}->{{ sc.state_field_name(state.parent) }} = {{ sc.state_enum_name(state) }};
     {% if state.init_actions %}
     {{ state.init_actions | join(';\n    ') }};
     {% endif %}
+    {% endif %}
 }
+{% if not state.is_transient %}
+{% if state.exit_actions %}
 
 {{ exit_sig(state) }}
 {
-    {% if state.exit_actions %}
     {{ state.exit_actions | join(';\n    ') }};
-    {% else %}
-    (void){{ sc.state_chart_pointer }};
-    {% endif %}
 }
+{% endif %}
+{% if state.event_handlers %}
 
 {{ event_handler_sig(state) }}
 {
@@ -106,6 +118,8 @@ else if ({{ transition_.guard }})
     {% endfor %}
     }
 }
+{% endif %}
+{% endif %}
 
 {% endfor -%}
 
@@ -119,9 +133,11 @@ else if ({{ transition_.guard }})
     switch ({{sc.state_chart_pointer }}->{{sc.state_field_name(root_state)}})
     {
     {% for state in root_state.states %}
+    {% if not state.is_transient and state.event_handlers %}
     case {{ sc.state_enum_name(state) }}:
         {{ event_handler_name(state) }}({{ sc.state_chart_pointer }}, {{ sc.event_variable }});
         break;
+    {% endif %}
     {% endfor %}
     }
 }
