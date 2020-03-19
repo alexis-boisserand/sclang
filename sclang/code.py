@@ -1,6 +1,6 @@
 import os
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
-from .normalize import upper_case, lower_case, camel_case, lower_camel_case
+from .normalize import upper_case, lower_case, camel_case
 
 current_dir = os.path.dirname(__file__)
 template_dir = os.path.join(current_dir, 'templates')

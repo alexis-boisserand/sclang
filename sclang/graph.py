@@ -1,4 +1,3 @@
-import sys
 import os
 from subprocess import Popen, PIPE
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
