@@ -19,37 +19,21 @@
 
 {% macro decl_state(state) %}
 {% if state.is_atomic %}
-state {{ state.unique_name }} {% if state.is_transient %}<<choice>>{% endif %}
 {% endif %}
 {%- endmacro -%}
 
 {% macro make_state(state) %}
-{% if not state.is_atomic %}
+{% if state.is_atomic %}
+state {{ state.unique_name }} {% if state.is_transient %}<<choice>>{% endif %}
+{% else %}
 state {{ state.unique_name }} {
     {% for substate in state.states %}
-    {{ decl_state(substate) | indent }}
+    {{ make_state(substate) | indent }}
     {% endfor %}
-    {% for substate in state.states %}
-    {{ make_state(substate) | indent -}}
-    {% endfor %}
-
     [*] --> {{ state.states[0].unique_name }}
 }
 {% endif %}
 
-{% if state.init_actions %}
-{{ state.unique_name }} : init / {{ state.init_actions|join('\\n') }}
-{% endif %}
-{% if state.exit_actions %}
-{{ state.unique_name }} : exit / {{ state.exit_actions|join('\\n') }}
-{% endif %}
-{% for transition in state.transitions %}
-{% if not transition.is_internal %}
-{{ state.unique_name }} --> {{ transition.target.unique_name }}{{ make_transition(transition) }}
-{% else %}
-{{ state.unique_name }} {{ make_transition(transition) }}
-{% endif %}
-{% endfor %}
 {%- endmacro -%}
 
 @startuml
@@ -75,4 +59,19 @@ skinparam activity {
 }
 
 {{ make_state(root_state) }}
+{% for state in root_state.all_states %}
+{% if state.init_actions %}
+{{ state.unique_name }} : init / {{ state.init_actions|join('\\n') }}
+{% endif %}
+{% if state.exit_actions %}
+{{ state.unique_name }} : exit / {{ state.exit_actions|join('\\n') }}
+{% endif %}
+{% for transition in state.transitions %}
+{% if not transition.is_internal %}
+{{ state.unique_name }} --> {{ transition.target.unique_name }}{{ make_transition(transition) }}
+{% else %}
+{{ state.unique_name }} {{ make_transition(transition) }}
+{% endif %}
+{% endfor %}
+{% endfor %}
 @enduml
