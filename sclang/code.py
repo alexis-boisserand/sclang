@@ -24,11 +24,13 @@ style = {
     'constant': upper_case
 }
 
+
 def add_handlers_attr(transition):
     start = transition.event_handler.state
     end = transition.target
     start_elements = start.path_elements
     end_elements = end.path_elements
+
 
 def add_path_elements_attr(root_state):
     for state in root_state.all_states:
