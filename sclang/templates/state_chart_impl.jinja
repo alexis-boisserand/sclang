@@ -1,6 +1,9 @@
 {% import 'state_chart.jinja' as sc with context %}
 {% extends 'base.jinja' %}
 
+{% set recurse_variable = variable('recurse') %}
+{% set recurse_param = ('bool', recurse_variable) %}
+
 {% macro state_function_name(state, suffix)%}
 {{ function(*(state.path_elements + [suffix])) }}
 {%- endmacro %}
@@ -39,11 +42,16 @@
 {% if transition.is_internal %}
 {{ actions(transition.actions) -}}
 {% else %}
-{% if state.exit_actions %}
-{{ exit_name(state) }}({{ sc.state_chart_pointer }});
+{% set common_ancestor = state.common_ancestor(transition.target) %}
+{% for exit_state in [state] + state.states_to_ancestor(common_ancestor) %}
+{% if exit_state.exit_actions %}
+{{ exit_name(exit_state) }}({{ sc.state_chart_pointer }});
 {% endif %}
+{% endfor %}
 {{ actions(transition.actions) -}}
-{{ init_name(transition.target) }}({{ sc.state_chart_pointer }});
+{% for init_state in ([transition.target] + transition.target.states_to_ancestor(common_ancestor)) | reverse %}
+{{ init_name(init_state) }}({{ sc.state_chart_pointer }});
+{% endfor %}
 {% endif %}
 {%- endmacro %}
 
@@ -68,6 +76,7 @@ else if ({{ transition_.guard }})
 
 {% block body %}
 #include "{{ filename(root_state.name) }}.h"
+#include <stdbool.h>
 
 {% for state in root_state.all_states[1:] %}
 {{ init_sig(state) }};

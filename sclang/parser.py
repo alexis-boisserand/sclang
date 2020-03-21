@@ -1,4 +1,3 @@
-from collections import OrderedDict
 from lark import Lark, Transformer, v_args
 from lark.indenter import Indenter
 from lark.exceptions import LarkError
@@ -159,13 +158,6 @@ def join(path1, path2):
     return path1 + '/' + path2
 
 
-def get_state_paths(root_state):
-    paths = OrderedDict()
-    for state in root_state.all_states:
-        paths[state.path] = state
-    return paths
-
-
 def validate_states_are_reachable(states):
     # all states are reachable
     # if all atomic states are reachable
@@ -243,7 +235,7 @@ def validate_target_path(transition):
 
 
 def validate(root_state):
-    state_paths = get_state_paths(root_state)
+    state_paths = root_state.state_paths
 
     for state in state_paths.values():
 

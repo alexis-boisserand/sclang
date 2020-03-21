@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from cached_property import cached_property
 
 
@@ -31,6 +32,10 @@ class State:
             state = state.parent
         elements.append(state.name)
         return '/'.join(reversed(elements))
+
+    @cached_property
+    def path_elements(self):
+        return self.path.split('/')
 
     @cached_property
     def all_states(self):
@@ -79,6 +84,39 @@ class State:
         for substate in self.states:
             events.update(substate.event_names)
         return events
+
+    @cached_property
+    def state_paths(self):
+        if self.parent is None:
+            paths = OrderedDict()
+            for state in self.all_states:
+                paths[state.path] = state
+            return paths
+        state = self.parent
+        while state.parent is not None:
+            state = state.parent
+        return state.state_paths
+
+    def common_ancestor(self, other):
+        elts = self.path_elements
+        other_elts = other.path_elements
+        common_elts = []
+        for elt, other_elt in zip(elts, other_elts):
+            if elt == other_elt:
+                common_elts.append(elt)
+            else:
+                break
+        return self.state_paths['/'.join(common_elts)]
+
+    def states_to_ancestor(self, ancestor):
+        if self is ancestor:
+            return []
+        parent = self.parent
+        states = []
+        while parent not in [None, ancestor]:
+            states.append(parent)
+            parent = parent.parent
+        return states
 
 
 class EventHandler:

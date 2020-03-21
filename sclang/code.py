@@ -25,21 +25,7 @@ style = {
 }
 
 
-def add_handlers_attr(transition):
-    start = transition.event_handler.state
-    end = transition.target
-    start_elements = start.path_elements
-    end_elements = end.path_elements
-
-
-def add_path_elements_attr(root_state):
-    for state in root_state.all_states:
-        path_elements = state.path.split('/')
-        state.path_elements = list(path_elements)
-
-
 def code(root_state, output_dir):
-    add_path_elements_attr(root_state)
     env = Environment(loader=FileSystemLoader(template_dir),
                       trim_blocks=True,
                       lstrip_blocks=True,
