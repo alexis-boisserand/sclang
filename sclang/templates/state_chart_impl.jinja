@@ -21,11 +21,23 @@
 {%- endmacro %}
 
 {% macro init_sig(state) %}
-{{ sc.function_signature('static void', init_name(state), [sc.state_chart_param]) }}
+{% if state.is_atomic %}
+{{ sc.function_signature('static void', init_name(state), [sc.state_chart_param]) -}}
+{% else %}
+{{ sc.function_signature('static void', init_name(state), [sc.state_chart_param, recurse_param]) -}}
+{% endif %}
 {%- endmacro %}
 
 {% macro exit_sig(state) %}
 {{ sc.function_signature('static void', exit_name(state), [sc.state_chart_param]) }}
+{%- endmacro %}
+
+{% macro call_init(state, recurse) %}
+{% if state.is_atomic %}
+{{ init_name(state) }}({{ sc.state_chart_pointer }});
+{% else %}
+{{ init_name(state) }}({{ sc.state_chart_pointer }}, {{ recurse }});
+{% endif %}
 {%- endmacro %}
 
 {% macro event_handler_sig(state) %}
@@ -33,14 +45,12 @@
 {%- endmacro %}
 
 {% macro actions(actions) %}
-{% if actions %}
 {{ actions | join(';\n') }};
-{% endif %}
 {%- endmacro %}
 
 {% macro transition(state, transition) %}
 {% if transition.is_internal %}
-{{ actions(transition.actions) -}}
+{{ actions(transition.actions) }}
 {% else %}
 {% set common_ancestor = state.common_ancestor(transition.target) %}
 {% for exit_state in [state] + state.states_to_ancestor(common_ancestor) %}
@@ -48,9 +58,11 @@
 {{ exit_name(exit_state) }}({{ sc.state_chart_pointer }});
 {% endif %}
 {% endfor %}
-{{ actions(transition.actions) -}}
+{% if transition.actions %}
+{{ actions(transition.actions) }}
+{% endif %}
 {% for init_state in ([transition.target] + transition.target.states_to_ancestor(common_ancestor)) | reverse %}
-{{ init_name(init_state) }}({{ sc.state_chart_pointer }});
+{{ call_init(init_state, 'true'if loop.last else 'false') -}}
 {% endfor %}
 {% endif %}
 {%- endmacro %}
@@ -98,8 +110,13 @@ else if ({{ transition_.guard }})
     {% else %}
     {{ sc.state_chart_pointer }}->{{ sc.state_field_name(state.parent) }} = {{ sc.state_enum_name(state) }};
     {% if state.init_actions %}
-    {{ state.init_actions | join(';\n    ') }};
+    {{ actions(state.init_actions) | indent }}
     {% endif %}
+    {% endif %}
+    {% if not state.is_atomic %}
+    if ({{ recurse_variable }})
+    {
+        {{ call_init(state.initial, recurse_variable) }}    }
     {% endif %}
 }
 {% if not state.is_transient %}
@@ -107,13 +124,33 @@ else if ({{ transition_.guard }})
 
 {{ exit_sig(state) }}
 {
-    {{ state.exit_actions | join(';\n    ') }};
+    {{ actions(state.exit_actions) }}
 }
 {% endif %}
 {% if state.event_handlers %}
 
 {{ event_handler_sig(state) }}
 {
+    {% if not state.is_atomic %}
+    switch ({{sc.state_chart_pointer }}->{{sc.state_field_name(state)}})
+    {
+    {% for substate in state.states %}
+    {% if not substate.is_transient and substate.event_handlers %}
+    case {{ sc.state_enum_name(substate) }}:
+        {{ event_handler_name(substate) }}({{ sc.state_chart_pointer }}, {{ sc.event_variable }});
+        break;
+    {% endif %}
+    {% endfor %}
+    }
+    {% if state.parent %}
+
+    if ({{sc.state_chart_pointer }}->{{sc.state_field_name(state.parent)}} != {{ sc.state_enum_name(state) }})
+    {
+        return;
+    }
+    {% endif %}
+
+    {% endif %}
     switch ({{ sc.event_variable }})
     {
     {% for event_handler in state.event_handlers %}
@@ -134,7 +171,7 @@ else if ({{ transition_.guard }})
 
 {{ sc.state_chart_init_sig }}
 {
-    {{ init_name(root_state.initial) }}({{ sc.state_chart_pointer }});
+    {{ call_init(root_state.initial, 'true') -}}
 }
 
 {{ sc.state_chart_event_handler_sig }}
