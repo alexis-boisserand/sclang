@@ -9,7 +9,8 @@
 {%- endmacro %}
 
 {% macro init_name(state)%}
-{{ state_function_name(state, 'init') }}
+{% set suffix = '' if state.parent else '_' %}
+{{ state_function_name(state, 'init') + suffix }}
 {%- endmacro %}
 
 {% macro exit_name(state)%}
@@ -21,11 +22,8 @@
 {%- endmacro %}
 
 {% macro init_sig(state) %}
-{% if state.is_atomic %}
-{{ sc.function_signature('static void', init_name(state), [sc.state_chart_param]) -}}
-{% else %}
-{{ sc.function_signature('static void', init_name(state), [sc.state_chart_param, recurse_param]) -}}
-{% endif %}
+{% set params = [sc.state_chart_param] if state.is_atomic else [sc.state_chart_param, recurse_param] %}
+{{ sc.function_signature('static void', init_name(state), params) -}}
 {%- endmacro %}
 
 {% macro exit_sig(state) %}
@@ -41,7 +39,8 @@
 {%- endmacro %}
 
 {% macro event_handler_sig(state) %}
-{{ sc.function_signature('static void', event_handler_name(state), sc.event_handler_params) }}
+{% set type = 'void' if not state.parent else 'static void' %}
+{{ sc.function_signature(type, event_handler_name(state), sc.event_handler_params) }}
 {%- endmacro %}
 
 {% macro actions(actions) %}
@@ -90,24 +89,22 @@ else if ({{ transition_.guard }})
 #include "{{ filename(root_state.name) }}.h"
 #include <stdbool.h>
 
-{% for state in root_state.all_states[1:] %}
+{% for state in root_state.all_states %}
 {{ init_sig(state) }};
 {% if not state.is_transient %}
 {% if state.exit_actions %}
 {{ exit_sig(state) }};
 {% endif %}
-{% if state.event_handlers %}
 {{ event_handler_sig(state) }};
-{% endif %}
 {% endif %}
 {% endfor %}
 
-{% for state in root_state.all_states[1:] %}
+{% for state in root_state.all_states %}
 {{ init_sig(state) }}
 {
     {% if state.is_transient %}
     {{ guarded_event_handler(state, state.event_handlers[0]) | indent -}}
-    {% else %}
+    {% elif state.parent %}
     {{ sc.state_chart_pointer }}->{{ sc.state_field_name(state.parent) }} = {{ sc.state_enum_name(state) }};
     {% if state.init_actions %}
     {{ actions(state.init_actions) | indent }}
@@ -127,7 +124,6 @@ else if ({{ transition_.guard }})
     {{ actions(state.exit_actions) }}
 }
 {% endif %}
-{% if state.event_handlers %}
 
 {{ event_handler_sig(state) }}
 {
@@ -165,27 +161,12 @@ else if ({{ transition_.guard }})
     }
 }
 {% endif %}
-{% endif %}
 
 {% endfor -%}
 
 {{ sc.state_chart_init_sig }}
 {
-    {{ call_init(root_state.initial, 'true') -}}
-}
-
-{{ sc.state_chart_event_handler_sig }}
-{
-    switch ({{sc.state_chart_pointer }}->{{sc.state_field_name(root_state)}})
-    {
-    {% for state in root_state.states %}
-    {% if not state.is_transient and state.event_handlers %}
-    case {{ sc.state_enum_name(state) }}:
-        {{ event_handler_name(state) }}({{ sc.state_chart_pointer }}, {{ sc.event_variable }});
-        break;
-    {% endif %}
-    {% endfor %}
-    }
+    {{ call_init(root_state, 'true') -}}
 }
 
 {% endblock %}

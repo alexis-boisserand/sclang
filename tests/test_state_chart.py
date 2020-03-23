@@ -136,6 +136,7 @@ on
   @TIMEOUT -> off
 '''
     sc = parse(input)
+    assert sc.common_ancestor(sc) is sc
     assert sc.states[0].states[0].common_ancestor(
         sc.states[0].states[0]) is sc.states[0].states[0]
     assert sc.states[0].states[0].common_ancestor(
