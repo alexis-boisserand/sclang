@@ -106,9 +106,9 @@ else if ({{ transition_.guard }})
     {{ guarded_event_handler(state, state.event_handlers[0]) | indent -}}
     {% elif state.parent %}
     {{ sc.state_chart_pointer }}->{{ sc.state_field_name(state.parent) }} = {{ sc.state_enum_name(state) }};
+    {% endif %}
     {% if state.init_actions %}
     {{ actions(state.init_actions) | indent }}
-    {% endif %}
     {% endif %}
     {% if not state.is_atomic %}
     if ({{ recurse_variable }})
@@ -131,7 +131,7 @@ else if ({{ transition_.guard }})
     switch ({{sc.state_chart_pointer }}->{{sc.state_field_name(state)}})
     {
     {% for substate in state.states %}
-    {% if not substate.is_transient and substate.event_handlers %}
+    {% if not substate.is_transient %}
     case {{ sc.state_enum_name(substate) }}:
         {{ event_handler_name(substate) }}({{ sc.state_chart_pointer }}, {{ sc.event_variable }});
         break;

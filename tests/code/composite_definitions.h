@@ -5,6 +5,5 @@
 
 extern uint32_t init_;
 extern uint32_t exit_;
-extern uint32_t action;
 
 #endif
