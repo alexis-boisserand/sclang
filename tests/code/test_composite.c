@@ -1,7 +1,6 @@
 #include "composite.h"
 
 #include <assert.h>
-#include <stdio.h>
 
 uint32_t init_ = 0;
 uint32_t exit_ = 0;
@@ -41,7 +40,6 @@ int main(int argc, char** argv)
     composite_handle_event(&sc, COMPOSITE_EVT_RESET);
     composite_handle_event(&sc, COMPOSITE_EVT_EVENT_ONE);
     assert(init_ == (0x1 | 0x2 | 0x4));
-    printf("%x\n", exit_);
     assert(exit_ == (0x2 | 0x4));
     assert(sc.state == COMPOSITE_ST_LEVEL_ZERO);
     assert(sc.level_zero_state == COMPOSITE_ST_LEVEL_ZERO_LEVEL_ONE_TWO);

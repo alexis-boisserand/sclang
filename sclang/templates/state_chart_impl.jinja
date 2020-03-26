@@ -27,7 +27,10 @@
 {%- endmacro %}
 
 {% macro exit_sig(state) %}
-{{ sc.function_signature('static void', exit_name(state), [sc.state_chart_param]) }}
+{% if state.exit_actions %}
+{% set params = [sc.state_chart_param] if state.is_atomic else [sc.state_chart_param, recurse_param] %}
+{{ sc.function_signature('static void', exit_name(state), params) -}}
+{% endif %}
 {%- endmacro %}
 
 {% macro call_init(state, recurse) %}
@@ -35,6 +38,14 @@
 {{ init_name(state) }}({{ sc.state_chart_pointer }});
 {% else %}
 {{ init_name(state) }}({{ sc.state_chart_pointer }}, {{ recurse }});
+{% endif %}
+{%- endmacro %}
+
+{% macro call_exit(state, recurse) %}
+{% if state.is_atomic %}
+{{ exit_name(state) }}({{ sc.state_chart_pointer }});
+{% else %}
+{{ exit_name(state) }}({{ sc.state_chart_pointer }}, {{ recurse }});
 {% endif %}
 {%- endmacro %}
 
@@ -54,7 +65,7 @@
 {% set common_ancestor = state.common_ancestor(transition.target) %}
 {% for exit_state in [state] + state.states_to_ancestor(common_ancestor) %}
 {% if exit_state.exit_actions %}
-{{ exit_name(exit_state) }}({{ sc.state_chart_pointer }});
+{{ call_exit(exit_state, 'true'if loop.first else 'false') -}}
 {% endif %}
 {% endfor %}
 {% if transition.actions %}
@@ -121,6 +132,21 @@ else if ({{ transition_.guard }})
 
 {{ exit_sig(state) }}
 {
+    {% if not state.is_atomic %}
+    if ({{ recurse_variable }})
+    {
+        switch ({{sc.state_chart_pointer }}->{{sc.state_field_name(state)}})
+        {
+        {% for substate in state.states %}
+        {% if substate.exit_actions %}
+        case {{ sc.state_enum_name(substate) }}:
+            {{ call_exit(substate, recurse_variable) -}}
+            {{ '            break;' }}
+        {% endif %}
+        {% endfor %}
+        }
+    }
+    {% endif %}
     {{ actions(state.exit_actions) }}
 }
 {% endif %}
