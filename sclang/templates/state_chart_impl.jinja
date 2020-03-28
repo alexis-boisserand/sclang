@@ -92,25 +92,7 @@ else if ({{ transition_.guard }})
 {% endfor %}
 {%- endmacro %}
 
-{% block description %}
- * {{root_state.name}} statechart implementation.
-{% endblock %}
-
-{% block body %}
-#include "{{ filename(root_state.name) }}.h"
-#include <stdbool.h>
-
-{% for state in root_state.all_states %}
-{{ init_sig(state) }};
-{% if not state.is_transient %}
-{% if state.exit_actions %}
-{{ exit_sig(state) }};
-{% endif %}
-{{ event_handler_sig(state) }};
-{% endif %}
-{% endfor %}
-
-{% for state in root_state.all_states %}
+{% macro init_impl(state) %}
 {{ init_sig(state) }}
 {
     {% if state.is_transient %}
@@ -127,9 +109,9 @@ else if ({{ transition_.guard }})
         {{ call_init(state.initial, recurse_variable) }}    }
     {% endif %}
 }
-{% if not state.is_transient %}
-{% if state.exit_actions %}
+{%- endmacro %}
 
+{% macro exit_impl(state) %}
 {{ exit_sig(state) }}
 {
     {% if not state.is_atomic %}
@@ -149,8 +131,9 @@ else if ({{ transition_.guard }})
     {% endif %}
     {{ actions(state.exit_actions) }}
 }
-{% endif %}
+{%- endmacro %}
 
+{% macro event_handler_impl(state) %}
 {{ event_handler_sig(state) }}
 {
     {% if not state.is_atomic %}
@@ -186,6 +169,35 @@ else if ({{ transition_.guard }})
     {% endfor %}
     }
 }
+{%- endmacro %}
+
+{% block description %}
+ * {{root_state.name}} statechart implementation.
+{% endblock %}
+
+{% block body %}
+#include "{{ filename(root_state.name) }}.h"
+#include <stdbool.h>
+
+{% for state in root_state.all_states %}
+{{ init_sig(state) }};
+{% if not state.is_transient %}
+{% if state.exit_actions %} {# FIXME: what about exit actions from substates? #}
+{{ exit_sig(state) }};
+{% endif %}
+{{ event_handler_sig(state) }};
+{% endif %}
+{% endfor %}
+
+{% for state in root_state.all_states %}
+{{ init_impl(state) }}
+{% if not state.is_transient %}
+{% if state.exit_actions %}
+
+{{ exit_impl(state) }}
+{% endif %}
+
+{{ event_handler_impl(state) }}
 {% endif %}
 
 {% endfor -%}
