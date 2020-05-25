@@ -27,10 +27,8 @@
 {%- endmacro %}
 
 {% macro exit_sig(state) %}
-{% if state.exit_actions %}
 {% set params = [sc.state_chart_param] if state.is_atomic else [sc.state_chart_param, recurse_param] %}
 {{ sc.function_signature('static void', exit_name(state), params) -}}
-{% endif %}
 {%- endmacro %}
 
 {% macro call_init(state, recurse) %}
@@ -64,7 +62,7 @@
 {% else %}
 {% set common_ancestor = state.common_ancestor(transition.target) %}
 {% for exit_state in [state] + state.states_to_ancestor(common_ancestor) %}
-{% if exit_state.exit_actions %}
+{% if not exit_state.is_transient %}
 {{ call_exit(exit_state, 'true'if loop.first else 'false') -}}
 {% endif %}
 {% endfor %}
@@ -120,7 +118,7 @@ else if ({{ transition_.guard }})
         switch ({{sc.state_chart_pointer }}->{{sc.state_field_name(state)}})
         {
         {% for substate in state.states %}
-        {% if substate.exit_actions %}
+        {% if not substate.is_transient %}
         case {{ sc.state_enum_name(substate) }}:
             {{ call_exit(substate, recurse_variable) -}}
             {{ '            break;' }}
@@ -129,7 +127,9 @@ else if ({{ transition_.guard }})
         }
     }
     {% endif %}
-    {{ actions(state.exit_actions) }}
+    {% if state.exit_actions %}
+    {{ actions(state.exit_actions) | indent }}
+    {% endif %}
 }
 {%- endmacro %}
 
@@ -147,7 +147,7 @@ else if ({{ transition_.guard }})
     {% endif %}
     {% endfor %}
     }
-    {% if state.parent %}
+    {% if state.parent and state.event_handlers %}
 
     if ({{sc.state_chart_pointer }}->{{sc.state_field_name(state.parent)}} != {{ sc.state_enum_name(state) }})
     {
@@ -156,6 +156,7 @@ else if ({{ transition_.guard }})
     {% endif %}
 
     {% endif %}
+    {% if state.event_handlers %}
     switch ({{ sc.event_variable }})
     {
     {% for event_handler in state.event_handlers %}
@@ -168,6 +169,7 @@ else if ({{ transition_.guard }})
         break;
     {% endfor %}
     }
+    {% endif %}
 }
 {%- endmacro %}
 
@@ -182,9 +184,7 @@ else if ({{ transition_.guard }})
 {% for state in root_state.all_states %}
 {{ init_sig(state) }};
 {% if not state.is_transient %}
-{% if state.exit_actions %} {# FIXME: what about exit actions from substates? #}
 {{ exit_sig(state) }};
-{% endif %}
 {{ event_handler_sig(state) }};
 {% endif %}
 {% endfor %}
@@ -192,10 +192,8 @@ else if ({{ transition_.guard }})
 {% for state in root_state.all_states %}
 {{ init_impl(state) }}
 {% if not state.is_transient %}
-{% if state.exit_actions %}
 
 {{ exit_impl(state) }}
-{% endif %}
 
 {{ event_handler_impl(state) }}
 {% endif %}

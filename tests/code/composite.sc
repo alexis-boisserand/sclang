@@ -24,4 +24,8 @@ LevelZero
       @event_three -> LevelTwoOne
     LevelTwoOne
   LevelOneTwo
+    @event_four -> LevelOne
+    LevelOneTwoOne
+      #exit
+        "exit_ |= 0x8"
   LevelOneThree
