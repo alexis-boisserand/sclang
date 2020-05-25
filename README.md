@@ -3,27 +3,19 @@
 
 ## Introduction
 sclang is a compact declarative language for state machine description. It is bundled with two tools:
-* code: A C code generator that automatically generates all the boilerplate code related to the state machine logic,
-allowing the developer to only focus on the actions of the system. The main target being reactive embedded systems,
- it generates simple, easy to read C99 code that only depends on <stdbool.h>.
+* code: A C code generator to automatically generate the boilerplate code for the state machine logic. It generates simple, easy to read C99 code that only depends on <stdbool.h>.
 
-* graph: A statechart diagram generator that allows to quickly validate and document the state machine design.
-
-
-
-// made for embedded systems
-// simple C code with no dependencies
-// state machine correctness
+* graph: A statechart diagram generator to quickly validate and document the state machine design.
 
 ## Simple example
 ```
-/simplest
-On
-  @TIMEOUT -> Off
-Off
-  @PRESS -> On
+/turnstile
+Locked
+  @COIN -> Unlocked
+Unlocked
+  @PUSH -> Locked
 ```
-![simple example](doc/simplest.png)
+![simple example](doc/turnstile.png)
 
 // installation
 
