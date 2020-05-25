@@ -7,7 +7,7 @@ sclang is a compact declarative language for state machine description. It comes
 
 * graph: A diagram generator to quickly validate and document the state machine design.
 
-## Simple example
+## Basic example
 
 The snippet below:
 
