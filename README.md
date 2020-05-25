@@ -8,7 +8,9 @@ sclang is a compact declarative language for state machine description. It comes
 * graph: A diagram generator to quickly validate and document the state machine design.
 
 ## Simple example
+
 The snippet below:
+
 ```
 /Life
 Living
@@ -19,10 +21,13 @@ Sleeping
 Working
   @COMMUTE -> Living
 ```
+
 will generate the following diagram:
-![simple example](doc/life.png)
+
+![life diagram](doc/life.png)
 
 and the following header file:
+
 ```c
 /**
  * @file
