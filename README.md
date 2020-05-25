@@ -13,8 +13,16 @@ The main target being reactive embedded systems, it generates simple, easy to re
 
 // made for embedded systems
 // simple C code with no dependencies
+// state machine correctness
 
 ## Simple example
+```
+/simplest
+On
+  @TIMEOUT -> Off
+Off
+  @PRESS -> On
+```
 ![simple example](doc/simplest.png)
 
 // installation
