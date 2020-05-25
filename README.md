@@ -9,7 +9,7 @@ sclang is a minimalistic declarative language for state machine description. It 
 The main target of sclang is embedded systems 
 
 ## Simple example
-![simple example](./images/simplest.png)
+![simple example](images/simplest.png)
 
 // installation
 
