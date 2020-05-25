@@ -6,10 +6,11 @@ sclang is a minimalistic declarative language for state machine description. It 
 * graph: a statechart diagram generator
 * code: a C code generator
 
-The main target of sclang is embedded systems 
+The main idea is to have a tool to automatically generate all the boilerplate code related to the state machine logic,
+allowing the developer to only focus on the actions of the system.
 
 ## Simple example
-![simple example](images/simplest.png)
+![simple example](doc/simplest.png)
 
 // installation
 
