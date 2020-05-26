@@ -8,7 +8,7 @@ set(sclang_root ${CMAKE_CURRENT_SOURCE_DIR}/../..)
 
 function (add_test name)
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${name}.h ${CMAKE_CURRENT_BINARY_DIR}/${name}.c
-                    COMMAND ${Python3_EXECUTABLE} -m sclang.tools.code -o ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/${name}.sc
+                    COMMAND ${Python3_EXECUTABLE} -m sclang.code -o ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/${name}.sc
                     WORKING_DIRECTORY ${sclang_root}
                     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${name}.sc)
 

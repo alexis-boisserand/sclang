@@ -1,4 +1,4 @@
-from sclang import parse
+from sclang.lib.parser import parse
 import pytest
 
 event_names_params = [('''

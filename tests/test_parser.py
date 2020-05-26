@@ -1,4 +1,4 @@
-from sclang import parse, ParsingError, DefinitionError
+from sclang.lib.parser import parse, ParsingError, DefinitionError
 import pytest
 
 
