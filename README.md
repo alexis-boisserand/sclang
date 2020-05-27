@@ -2,10 +2,10 @@
 # sclang
 
 ## Introduction
-sclang is a compact declarative language for describing state machines. It comes with two tools:
-* code: A C code generator to automatically generate the boilerplate code for the state machine logic. It generates simple, easy to read C99 code that only depends on <stdbool.h>.
+sclang is a compact declarative language for describing statecharts. It comes with two tools:
+* code: A C code generator to automatically generate the boilerplate code for the statechart logic. It generates simple, easy to read C99 code that only depends on <stdbool.h>.
 
-* graph: A diagram generator to quickly validate and document the state machine design.
+* graph: A diagram generator to quickly validate and document the statechart design.
 
 ## Basic example
 

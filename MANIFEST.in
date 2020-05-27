@@ -1,0 +1,3 @@
+recursive-include tests *
+recursive-include doc *
+recursive-include sclang/lib *
